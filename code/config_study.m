@@ -50,7 +50,7 @@ setup.MAP.LM        = [1 0 1 0]; % 1: Lateral to Medial Current flow (90°); 0: P
 setup.MAP.label.BI  = {'Biphasic','Monophasic'};
 setup.MAP.label.LM  = {'90°','45°'};
 %% Preloading subject parameters (age,sex,rmt)
-% based on tabulated data
+% based on tabulated data collected by CK
 [num,str,all]   = xlsread('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\subject_data.xlsx');
 setup.SUB.id    = num(:,1); %corresponding to S% in datasets
 setup.SUB.sex   = logical(num(:,1)); %male 1; female 0;
