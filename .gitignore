@@ -1,6 +1,7 @@
 BACKUP/
 data/
 zwischen/
+*.asv
 
 #################
 ## Eclipse
