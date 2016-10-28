@@ -69,7 +69,7 @@ for ss=1:length(setup.SUB.id), %every subject
     end
 end
 DESIGN = cat(2,setup.IO.BI(KOND)',setup.IO.LM(KOND)',setup.IO.M1(KOND)');
-%% calculation of descriptive statistics for MEP parameters (Peak-to-Peak amplitude, Latency) and MEP waveform (raw and shifted to origin at latency)
+%% calculation of descriptive statistics
 M   = NaN(7,8,13);
 E   = [];
 BI  = [];
@@ -99,7 +99,7 @@ for ssii=1:length(setup.IO.SI)
            t_shifted            = baseline(r(k==knd,:),1:100,1); %trials are baselined to the average of the 20ms prior to stimulation
            for e=1:size(t_shifted,1),
                % we calculate the latency as the average between negative
-               % and positive peak, and shift the MEP accordingly
+               % and pos
                [~,idx]  = sort(t_shifted(e,150:400));
                t_lat    = int32(150+mean([idx(1),idx(end)]));
                shiftMEP(ssii,knd,ss,:) = (t_shifted(e,t_lat-100:t_lat+99));
