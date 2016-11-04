@@ -2,6 +2,7 @@
 % configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
 cls; %clc, clear all, close all, matlabrc, addpath of Fieldtrip and other toolboxes, ft_defaults
+addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder');
 %% loading data
 D           = dir(folder.data.ioc);
@@ -92,11 +93,11 @@ for ssii=1:length(setup.IO.SI)
         d           = t_data(ismember(t_sub,s),:);
         k           = t_kond(ismember(t_sub,s),:);
         %r           = t_raw(ismember(t_sub,s),:,:);
-        r           = filt_mova(t_raw(ismember(t_sub,s),:,:)',50,9)'; %raw MEP is filtered with a Gaussian Kernel (third argument==9), and a bandwidth of 50 samples (i.e. 10ms) second argument)        
+        r           = utils.filt_mova(t_raw(ismember(t_sub,s),:,:)',50,9)'; %raw MEP is filtered with a Gaussian Kernel (third argument==9), and a bandwidth of 50 samples (i.e. 10ms) second argument)        
         for knd = min(k):max(k),
            M(ssii,knd,ss)       = mean(d(k==knd));
-           RW(ssii,knd,ss,:)    = mean(baseline(r(k==knd,:),1:100,1)); %trials are baselined to the average of the 20ms prior to stimulation
-           t_shifted            = baseline(r(k==knd,:),1:100,1); %trials are baselined to the average of the 20ms prior to stimulation
+           RW(ssii,knd,ss,:)    = mean(utils.baseline(r(k==knd,:),1:100,1)); %trials are baselined to the average of the 20ms prior to stimulation
+           t_shifted            = utils.baseline(r(k==knd,:),1:100,1); %trials are baselined to the average of the 20ms prior to stimulation
            for e=1:size(t_shifted,1),
                % we calculate the latency as the average between negative
                % and positive peak, and shift the MEP accordingly
