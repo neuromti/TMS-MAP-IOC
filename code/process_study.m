@@ -7,15 +7,11 @@ load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setu
 %% loading data
 D           = dir(folder.data.ioc);
 D([1,2])    = [];
-%define mixing matrix
-SUB         = [];
-KOND        = []; 
+%define data matrix
 latDATA     = []; %latenz data 
 ampDATA     = []; %amplitude data
 rawDATA     = []; %raw MEP waveform data
-msoINT      = []; %raw stimulation intensity in maximal stimulator output percent (MSO)
-rmtINT      = []; %normalized stimulation intensity in resting motor threshold precent (RMT)
-RMT         = NaN(length(setup.SUB.id),length(setup.IO.label.all)); %RMT in MSO
+subAverage  = struct('ampDATA',[],'mepDATA',[],'latDATA',[],'rawDATA',[],'filtDATA',[],'msoDATA',[],'Design',[],'Condition',[]); %initialize for runwise averaged data
 % load data from files and concatenate
 for ss=1:length(setup.SUB.id), %every subject
     s = setup.SUB.id(ss);
@@ -33,109 +29,49 @@ for ss=1:length(setup.SUB.id), %every subject
         % artifacts or other error
         if all(isnan(ioc.int))
             continue;
-        end
+        end                        
         
+        %concatenate data vectors after cleaning for artifacts (indicated
+        %by negative values) and lack of MEP (indicated by zero latency)       
+        cleaned             = ioc.lat;
+        artifacted          = (ioc.amp<0) | (ioc.lat <0 | ioc.lat == 0);
+        cleaned(artifacted) = NaN;       
+        t_lat               = nanmean(reshape(cleaned,10,7),1)';
+        subAverage.latDATA  = cat(1,subAverage.latDATA,t_lat);
         
-        %concatenate design vector for repeatedly measured subject 
-        SUB         = cat(1,SUB,s*ones(size(ioc.int))); 
+        %concatenate data vectors after cleaning for artifacts (indicated
+        %by negative values)        
+        cleaned             = ioc.amp;
+        artifacted          = (ioc.amp<0) | (ioc.lat <0);
+        cleaned(artifacted) = NaN;
+        t_amp               = nanmean(reshape(cleaned,10,7),1)';
+        t_mep               = nanmean(reshape(cleaned,10,7)>50,1)';
+        subAverage.ampDATA  = cat(1,subAverage.ampDATA,t_amp);        
+        subAverage.mepDATA  = cat(1,subAverage.mepDATA,t_mep); 
         
-        %concatenate design vector for repeatedly measured condition
-        KOND        = cat(1,KOND,c*ones(size(ioc.int))); 
+        cleaned             = reshape(ioc.raw,7*10,[]);        
+        baselined           = utils.baseline(cleaned,1:100,1);
+        filtered            = utils.filt_freqz(baselined,0,250,5000,2,2);
+        artifacted          = (ioc.amp<0) | (ioc.lat <0);
+        baselined(artifacted,:) = NaN;
+        filtered(artifacted,:)  = NaN;
+        
+        t_raw               = reshape(squeeze(nanmean(reshape(baselined,10,7,601),1)),7,[]);
+        t_filt              = reshape(squeeze(nanmean(reshape(filtered,10,7,601),1)),7,[]);
+        subAverage.rawDATA  = cat(1,subAverage.rawDATA,t_raw);
+        subAverage.filtDATA  = cat(1,subAverage.filtDATA,t_filt);
         
         %concatenate factor vector for intensity in MSO and RMT
-        mso         = sort(unique(ioc.int));
-        msoINT      = cat(1,msoINT,ioc.int);
-                
-        [~, rmt]    = ismember(ioc.int,mso);
-        rmtINT      = cat(1,rmtINT,setup.IO.SI(rmt)');
-
-        %concatenate data vectors after cleaning for artifacts (indicated
-        %by negative values)
-        artifacted          = (ioc.amp<0) | (ioc.lat <0);
-        cleaned             = ioc.amp;
-        cleaned(artifacted) = NaN;
-        ampDATA             = cat(1,ampDATA,cleaned);
+        mso                 = sort(unique(ioc.int));
+        subAverage.msoDATA  = cat(1,subAverage.msoDATA,mso);
         
-        cleaned             = ioc.lat;
-        cleaned(artifacted) = NaN;
-        latDATA             = cat(1,latDATA,cleaned);                
-        
-        cleaned             = reshape(ioc.raw,7*10,[]);
-        cleaned(artifacted,:) = NaN;
-        rawDATA             = cat(1,rawDATA,cleaned);
-        %estimate RMT in MSO 
-        RMT(s,c)            = mso(2); %raw value
-        %RMT(s,c)           = mean(diag(mso*(1./[.9,1,1.1,1.2,1.3,1.4,1.5]))); %inverse weighted average based on all seven intensities
-                
+        %create Design Matrix: BI LM M1 SUB SI       
+        subAverage.Design   = cat(1,subAverage.Design,cat(2,repmat(cat(2,setup.IO.BI(c)',setup.IO.LM(c)',setup.IO.M1(c)',s),7,1),[1:7]'));
     end
 end
-DESIGN = cat(2,setup.IO.BI(KOND)',setup.IO.LM(KOND)',setup.IO.M1(KOND)');
-%% calculation of descriptive statistics for MEP parameters (Peak-to-Peak amplitude, Latency) and MEP waveform (raw and shifted to origin at latency)
-M   = NaN(7,8,13);
-E   = [];
-BI  = [];
-LM  = [];
-M1  = [];
-RW  = [];
-shiftMEP = [];
-for ssii=1:length(setup.IO.SI)
-    
-    si              = setup.IO.SI(ssii);    
-    t_sub           = SUB(ismember(rmtINT,si));
-    u_sub           = unique(t_sub);    
-    
-    t_data          = ampDATA(ismember(rmtINT,si));      
-    t_raw           = rawDATA(ismember(rmtINT,si),:);      
-    t_kond          = KOND(ismember(rmtINT,si));
-    
-    for ss=1:length(u_sub), %for all subjects
-        s           = u_sub(ss);
-        d           = t_data(ismember(t_sub,s),:);
-        k           = t_kond(ismember(t_sub,s),:);
-        %r           = t_raw(ismember(t_sub,s),:,:);
-        r           = utils.filt_mova(t_raw(ismember(t_sub,s),:,:)',50,9)'; %raw MEP is filtered with a Gaussian Kernel (third argument==9), and a bandwidth of 50 samples (i.e. 10ms) second argument)        
-        for knd = min(k):max(k),
-           M(ssii,knd,ss)       = mean(d(k==knd));
-           RW(ssii,knd,ss,:)    = mean(utils.baseline(r(k==knd,:),1:100,1)); %trials are baselined to the average of the 20ms prior to stimulation
-           t_shifted            = utils.baseline(r(k==knd,:),1:100,1); %trials are baselined to the average of the 20ms prior to stimulation
-           for e=1:size(t_shifted,1),
-               % we calculate the latency as the average between negative
-               % and positive peak, and shift the MEP accordingly
-               [~,idx]  = sort(t_shifted(e,150:400));
-               t_lat    = int32(150+mean([idx(1),idx(end)]));
-               shiftMEP(ssii,knd,ss,:) = (t_shifted(e,t_lat-100:t_lat+99));
-           end
-        end
-    end
-
-end
-%% Visual inspection of descriptive statistics
-%% mep parameters
-BI  = cat(2,nanmean(nanmean(M(:,setup.IO.BI==1,:),3),2),nanmean(nanmean(M(:,setup.IO.BI==0,:),3),2));
-LM  = cat(2,nanmean(nanmean(M(:,setup.IO.LM==1,:),3),2),nanmean(nanmean(M(:,setup.IO.LM==0,:),3),2));
-M1  = cat(2,nanmean(nanmean(M(:,setup.IO.M1==1,:),3),2),nanmean(nanmean(M(:,setup.IO.M1==0,:),3),2));
-plot(M1)
-plot(BI)
-plot(LM)
-
-%% raw waveform
-rmtOI = 4;
-BI  = squeeze(cat(2,nanmean(nanmean(RW(:,setup.IO.BI==1,:,:),3),2),nanmean(nanmean(RW(:,setup.IO.BI==0,:,:),3),2)));
-LM  = squeeze(cat(2,nanmean(nanmean(RW(:,setup.IO.LM==1,:,:),3),2),nanmean(nanmean(RW(:,setup.IO.LM==0,:,:),3),2)));
-M1  = squeeze(cat(2,nanmean(nanmean(RW(:,setup.IO.M1==1,:,:),3),2),nanmean(nanmean(RW(:,setup.IO.M1==0,:,:),3),2)));
-plot(squeeze(M1(rmtOI,:,:))')
-plot(squeeze(BI(rmtOI,:,:))')
-plot(squeeze(LM(rmtOI,:,:))')
-
-%% latency shifted
-rmtOI = 4;
-BI  = squeeze(cat(2,nanmean(nanmean(shiftMEP(:,setup.IO.BI==1,:,:),3),2),nanmean(nanmean(shiftMEP(:,setup.IO.BI==0,:,:),3),2)));
-LM  = squeeze(cat(2,nanmean(nanmean(shiftMEP(:,setup.IO.LM==1,:,:),3),2),nanmean(nanmean(shiftMEP(:,setup.IO.LM==0,:,:),3),2)));
-M1  = squeeze(cat(2,nanmean(nanmean(shiftMEP(:,setup.IO.M1==1,:,:),3),2),nanmean(nanmean(shiftMEP(:,setup.IO.M1==0,:,:),3),2)));
-plot(squeeze(M1(rmtOI,:,:))')
-plot(squeeze(BI(rmtOI,:,:))')
-plot(squeeze(LM(rmtOI,:,:))')
-%% 
+%create Design Matrix for each Condition
+subAverage.Condition = bi2de(subAverage.Design(:,1:3))+1; 
+%%
 
 
 
@@ -157,37 +93,6 @@ plot(squeeze(LM(rmtOI,:,:))')
 
 
 
-%% statistical analysis
-%[p,tab,stats] = anovan(ampDATA,cat(2,rmtINT,KOND,SUB),'random',3,'display','off','varnames',{'SI','Condition','Subject'},'model',[1 0 0;0 1 0;0 0 1;1 1 0]);
-%[p,tab,stats] = anovan(ampDATA,cat(2,rmtINT,DESIGN,SUB),'random',5,'display','off','varnames',{'SI','Biphasic','M1','90°','Subject'},'model',[1 0 0 0 0;0 1 0 0 0;0 0 1 0 0;0 0 0 1 0;0 0 0 0 1;1 1 1 1 0]);
-
-M   = [];
-E   = [];
-BI  = [];
-LM  = [];
-M1  = [];
-for ssii=1:length(setup.IO.SI)
-    si              = setup.IO.SI(ssii);    
-    [p,tab,stats]   = anovan(ampDATA(ismember(rmtINT,si)),cat(2,DESIGN(ismember(rmtINT,si),:),SUB(ismember(rmtINT,si))),'display','off','varnames',{'Biphasic','90°','M1','Subject'},'model',[1 0 0 0;0 1 0 0;0 0 1 0;0 0 0 1;1 1 1 0]);
-    [c,m,h,nms]     = multcompare(stats,'dim',[1,2,3],'display','off');
-    E               = cat(2,E,m(:,2));    
-    
-    [c,m,h,nms]     = multcompare(stats,'dim',[1],'display','off');
-    BI              = cat(2,BI,m(:,1));
-        
-    [c,m,h,nms]     = multcompare(stats,'dim',[2],'display','off');
-    LM              = cat(2,LM,m(:,1));
-
-    [c,m,h,nms]     = multcompare(stats,'dim',[3],'display','off');
-    M1              = cat(2,M1,m(:,1));
-
-end
-
-
-for c=1:length(setup.IO.label.all),
-    
-    
-end
 
 
 
@@ -195,14 +100,20 @@ end
 
 
 
-for ssii=1:length(setup.IO.SI)
-    si          = setup.IO.SI(ssii);
-    datapool    = ampDATA(ismember(rmtINT,si));
-    subpool     = SUB(ismember(rmtINT,si));    
-    
-    
-    
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
