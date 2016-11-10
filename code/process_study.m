@@ -1,10 +1,13 @@
 %% Input-Output-Curve Analysis
 % configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-cls; %clc, clear all, close all, matlabrc, addpath of Fieldtrip and other toolboxes, ft_defaults
+cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder');
+
 %% loading data
+logfilename = [folder.code,'Log_',date,'.log'];
+logfileid   = fopen(logfilename,'wt');
 D           = dir(folder.data.ioc);
 D([1,2])    = [];
 %define data matrix
@@ -15,20 +18,26 @@ subAverage  = struct('ampDATA',[],'mepDATA',[],'latDATA',[],'rawDATA',[],'filtDA
 % load data from files and concatenate
 for ss=1:length(setup.SUB.id), %every subject
     s = setup.SUB.id(ss);
+    fprintf(logfileid,'\n Subject: %i \n',s);    
     for c=1:length(setup.IO.label.all), %all conditions
         filename = ['S',num2str(s),'C',num2str(c),'.mat'];        
+        fprintf(logfileid,'Loading %s ',filename);
         %check whether file exists and load if it does, otherwise throw
         %error
         if sum(ismember({D.name},filename)==1) 
             load([folder.data.ioc,filename]);
         else
             disp(['File ',filename, 'does not exist'])
+            fprintf(logfileid,'Error: File %s does not exist \n',filename);
         end
         
         % check whether complete dataset had to be rejected (due to
         % artifacts or other error
-        if all(isnan(ioc.int))
+        if all(isnan(ioc.int))            
+            fprintf(logfileid,'Skipped file %s\n',filename);
             continue;
+        else
+            fprintf(logfileid,'Processing %s\n',filename);
         end                        
         
         % LATENCY
@@ -75,6 +84,7 @@ for ss=1:length(setup.SUB.id), %every subject
 end
 %create Design Matrix for each Condition
 subAverage.Condition = cat(2,bi2de(subAverage.Design(:,1:3))+1,subAverage.Design(:,4:end)); 
+fclose(logfileid);
 %% PERMUTATION ANALYSIS
 % TODO implement for all variables of interest
 perm_DATA = subAverage.ampDATA;
