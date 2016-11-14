@@ -6,7 +6,7 @@ addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package 
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder');
 
 %% loading data
-logfilename = [folder.code,'Log_',date,'.log'];
+logfilename = [folder.code,'Logfile.log'];
 logfileid   = fopen(logfilename,'wt');
 D           = dir(folder.data.ioc);
 D([1,2])    = [];
@@ -86,11 +86,19 @@ end
 subAverage.Condition = cat(2,bi2de(subAverage.Design(:,1:3))+1,subAverage.Design(:,4:end)); 
 fclose(logfileid);
 %% PERMUTATION ANALYSIS
-% TODO implement for all variables of interest
-perm_DATA = subAverage.ampDATA;
-perm_DATA = subAverage.latDATA;
-% Design of the permutation vector
+% GLOBAL SETTING
 num_rep     = 1000;
+
+% DEFINITION OF ANALYSIS FUNCTION
+% output values are f-values from anova
+% subject as random factor
+% no interactions
+% independently for each SI due to assumption of heteroscedasticity
+do_test = @(x,y)anovan(x,y,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'});
+
+% CONSTRUCTION OF THE PERMUTATION ARRAY
+% Output: A cell array containing for each stimulation intensity a matrix for later design matrix permutation 
+
 PERM        = {};
 for si=1:7,
     perm_set    = [];
@@ -101,64 +109,68 @@ for si=1:7,
     PERM{si} = perm_set';
 end
 
-%
-% performing the permutation, based on F-Values from ANOVA
-perm_F = [];
-
-for si=1:7,    
-    t_sel               = subAverage.Design(:,end)==si;
-    t_design            = subAverage.Design(sel,1:4);        
-    for rep=1:num_rep,
-        t_idx               = PERM{si}(:,rep);
-        t_values            = perm_DATA(t_idx);                         
-        [p,tab,stats]       = anovan(t_values,t_design,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'});
-        perm_F(rep,si,:)    = [tab{2:5,6}];
-    end   
-end
-% calculating the maesured (true) F-Values using ANOVA
-true_F = [];
-for si=1:7,
-    t_sel               = (subAverage.Design(:,end)==si);
-    t_design            = subAverage.Design(sel,1:4);      
-    t_idx               = (subAverage.Design(:,end)==si);
-    t_values            = perm_DATA(t_idx,:);
-    [p,tab,stats]       = anovan(t_values,t_design,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'});
-    true_F(si,:)        = [tab{2:5,6}];
-end
-% estimating the p-values
-P = [];
-for si=1:7,
-    matrix_P    = repmat(true_F(si,:),num_rep,1)>=squeeze(perm_F(:,si,:));
-    t_p         = mean(matrix_P);
-    t_p         = min(t_p,1-t_p).*2;
-    P(si,:)     = t_p;
-end
-
-%calculation of averages
-BI = [];
-LM = [];
-M1 = [];
-for si=1:7
-    for k=1:3,
-    a           = nanmean(perm_DATA(subAverage.Design(:,k)==1 & subAverage.Design(:,5)==si));
-    b           = nanmean(perm_DATA(subAverage.Design(:,k)==0 & subAverage.Design(:,5)==si));
-    switch int8(k)
-        case 1, 
-            BI(si,:)    = [a,b];    
-        case 2, 
-            LM(si,:)    = [a,b];
-        case 3, 
-            M1(si,:)    = [a,b];
-        otherwise
-        disp('Error, impossible case');
+% CONSTRUCTION OF THE BOOTSTRAPPING VECTOR
+% Output: A cell array containing for each stimulation intensity a matrix for later design matrix bootstrapping 
+BOT        = {};
+for si=1:7.
+    bot_set    = [];
+    idx         = find(subAverage.Design(:,end)==si);
+    for rep=1:num_rep, 
+        bot_set    = cat(1,bot_set,datasample(idx,length(idx))');
     end
-    end    
+    BOT{si} = bot_set';
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PERFORM STATISTICAL ANALYSIS FOR EACH VARIABLE OF INTEREST
+% DEFINE VARIABLES OF INTEREST
+clear STAT_RESULTS;
+VOI = {'ampDATA','mepDATA','latDATA'};
+for voi = 1:length(VOI),
 
-%% TO DO 
+    eval(['DATA = subAverage.',VOI{voi},';']);
 
-%visualization
+    % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values 
+    [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
+    
+    % AGGREGATE RESULTS FOR EACH VOI
+    STAT_RESULTS(voi).bot_CI        = bot_CI;
+    STAT_RESULTS(voi).P             = P;
+
+end
+
+% PERFORMS STATISTICAL ANALYSIS FOR EACH TIMEPOINT OF RAW DATA
+voi = size(STAT_RESULTS,2)+1;
+for t=1:size(subAverage.rawDATA,2)
+    
+    DATA = subAverage.rawDATA(:,t);
+
+    % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values     
+    % bot_CI Output: A matrix containing for each intensity the bootstrapped upper and lower  95% CI for each
+    % factor and level (CiLow,CiUp,StimulationIntensity,Level,Factor)
+    % P Output: A matrix containing for each stimulation intensity the p-value of
+    % a two-sided hypothesis test
+
+    [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
+    % AGGREGATE RESULTS FOR EACH VOI
+    STAT_RESULTS(voi).bot_CI        = bot_CI;
+    STAT_RESULTS(voi).P             = P;
+
+end
+
+% ANALYSIS FINISHED FOR EACH VARIABLE OF INTEREST
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+save([folder.stat_results,'ioc.mat'],'STAT_RESULTS')
+
+%% TO DO PROPER VISUALIZATION
+close all
+figure
+plot(STAT_RESULTS(2).bot_CI(:,:,1,1)','k')
+hold on
+plot(STAT_RESULTS(2).bot_CI(:,:,2,1)','r')
+%%
+
 close all
 for k=1:3,
     h_fig = figure;
@@ -190,58 +202,3 @@ for k=1:3,
     set(h_axe,'YLIM',[25 30])
     set(h_lgnd,'Location','northwest')
 end    
-
-
-%% BOOTSTRAP ANALYSIS (TODO)
-
-% Design of the permutation vector
-num_rep     = 1000;
-PERM        = {};
-for si=1:7.
-    perm_set    = [];
-    idx         = find(subAverage.Design(:,end)==si);
-    for rep=1:num_rep, 
-        perm_set    = cat(1,perm_set,idx(randperm(length(idx)))');
-    end
-    PERM{si} = perm_set';
-end
-
-%
-% performing the permutation, based on F-Values from ANOVA
-perm_F = [];
-
-for si=1:7,    
-    t_sel               = subAverage.Design(:,end)==si;
-    t_design            = subAverage.Design(sel,1:4);        
-    for rep=1:num_rep,
-        t_idx               = PERM{si}(:,rep);
-        t_values            = subAverage.ampDATA(t_idx);                         
-        [p,tab,stats]       = anovan(t_values,t_design,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'});
-        perm_F(rep,si,:)    = [tab{2:5,6}];
-    end   
-end
-% calculating the maesured (true) F-Values using ANOVA
-true_F = [];
-for si=1:7,
-    t_sel               = (subAverage.Design(:,end)==si);
-    t_design            = subAverage.Design(sel,1:4);      
-    t_idx               = (subAverage.Design(:,end)==si);
-    t_values            = subAverage.ampDATA(t_idx,:);
-    [p,tab,stats]       = anovan(t_values,t_design,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'});
-    true_F(si,:)        = [tab{2:5,6}];
-end
-% estimating the p-values 
-P = [];
-for si=1:7,
-    matrix_P    = repmat(true_F(si,:),num_rep,1)>=squeeze(perm_F(:,si,:));
-    t_p         = mean(matrix_P);
-    t_p         = min(t_p,1-t_p).*2;
-    P(si,:)     = t_p;
-end
-
-
-
-
-
-
-

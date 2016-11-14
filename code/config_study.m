@@ -14,10 +14,12 @@ cls; %clc, clear all, close all, matlabrc, addpath of Fieldtrip and other toolbo
 % (results.m)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Defining the folder with the visually inspected electrophysiological Data, and predefine processing output folder
-folder.data.ioc     = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\ioc\';
-folder.data.map     = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\mapping\';
-folder.results      = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\results\';
-folder.code         = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\';
+folder.data.ioc         = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\ioc\';
+folder.data.map         = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\mapping\';
+folder.data.results     = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\results\';
+folder.results.stats    = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\results\stats\';
+folder.results.figs     = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\results\figs\';
+folder.code             = 'C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\';
 %% Data Organization and Conditions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % IOC Data is stored as .mat files folder.data.ioc according to the following schema
