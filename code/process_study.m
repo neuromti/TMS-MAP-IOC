@@ -86,8 +86,9 @@ end
 subAverage.Condition = cat(2,bi2de(subAverage.Design(:,1:3))+1,subAverage.Design(:,4:end)); 
 fclose(logfileid);
 %% PERMUTATION ANALYSIS
+
 % GLOBAL SETTING
-num_rep     = 1000;
+num_rep     = 10000;
 
 % DEFINITION OF ANALYSIS FUNCTION
 % output values are f-values from anova
@@ -124,6 +125,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PERFORM STATISTICAL ANALYSIS FOR EACH VARIABLE OF INTEREST
 % DEFINE VARIABLES OF INTEREST
+
+% LOG
+logfilename = [folder.code,'Logfile.log'];
+logfileid   = fopen(logfilename,'wt');     
+fprintf(logfileid,'Num Reps %i \n ',num_rep);
+fprintf(logfileid,'do_test %s \n',func2str(do_test));
+
 clear STAT_RESULTS;
 VOI = {'ampDATA','mepDATA','latDATA'};
 for voi = 1:length(VOI),
@@ -137,6 +145,8 @@ for voi = 1:length(VOI),
     STAT_RESULTS(voi).bot_CI        = bot_CI;
     STAT_RESULTS(voi).P             = P;
 
+    
+    fprintf(logfileid,'Finished %s \n',VOI{voi});
 end
 
 % PERFORMS STATISTICAL ANALYSIS FOR EACH TIMEPOINT OF RAW DATA
@@ -153,15 +163,40 @@ for t=1:size(subAverage.rawDATA,2)
 
     [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
     % AGGREGATE RESULTS FOR EACH VOI
-    STAT_RESULTS(voi).bot_CI        = bot_CI;
-    STAT_RESULTS(voi).P             = P;
-
+    STAT_RESULTS(voi).bot_CI(:,:,:,:,t)     = bot_CI;
+    STAT_RESULTS(voi).P(:,:,t)              = P;
+    
+    fprintf(logfileid,'Finished rawDATA Timepoint %i \n',t);
 end
 
 % ANALYSIS FINISHED FOR EACH VARIABLE OF INTEREST
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 save([folder.stat_results,'ioc.mat'],'STAT_RESULTS')
+fprintf(logfileid,'Everything saved');
+
+fclose(logfileid);
+%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% TO DO PROPER VISUALIZATION
 close all
