@@ -88,7 +88,7 @@ fclose(logfileid);
 %% PERMUTATION ANALYSIS
 
 % GLOBAL SETTING
-num_rep     = 10000;
+num_rep     = 1000;
 
 % DEFINITION OF ANALYSIS FUNCTION
 % output values are f-values from anova
@@ -111,13 +111,20 @@ for si=1:7,
 end
 
 % CONSTRUCTION OF THE BOOTSTRAPPING VECTOR
-% Output: A cell array containing for each stimulation intensity a matrix for later design matrix bootstrapping 
-BOT        = {};
-for si=1:7.
-    bot_set    = [];
-    idx         = find(subAverage.Design(:,end)==si);
-    for rep=1:num_rep, 
-        bot_set    = cat(1,bot_set,datasample(idx,length(idx))');
+% Output: A cell array containing for each stimulation intensity a factor-balanced bootstrap matrix
+BOT         = {};
+orderByte   = bin2dec(num2str(subAverage.Design(1:7:54,1:3)));
+
+for si=1:7.    
+    idx         = find(subAverage.Design(:,end)==si);        
+    bot_set     = NaN(num_rep,size(idx,1));
+    sel_design  = bin2dec(num2str(subAverage.Design(idx,1:3)));
+    for i_cond = 1:8, %balancing for each factor, bootstrapping only subjects, not factor levels
+        cond_idx = (ismember(sel_design,orderByte(i_cond)));
+        cond_sel = idx(cond_idx);
+        for rep=1:num_rep, 
+            bot_set(rep,cond_idx) = datasample(cond_sel,length(cond_sel));
+        end        
     end
     BOT{si} = bot_set';
 end
@@ -139,7 +146,9 @@ for voi = 1:length(VOI),
     eval(['DATA = subAverage.',VOI{voi},';']);
 
     % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values 
-    [bot_CI,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
+    tic
+    [bot_CI,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
+    toc 
     
     % AGGREGATE RESULTS FOR EACH VOI
     STAT_RESULTS(voi).bot_CI        = bot_CI;

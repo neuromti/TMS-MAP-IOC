@@ -2,6 +2,7 @@ BACKUP/
 data/
 zwischen/
 *.asv
+*.mat
 
 #################
 ## Eclipse
