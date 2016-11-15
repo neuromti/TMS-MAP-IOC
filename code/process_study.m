@@ -88,7 +88,7 @@ fclose(logfileid);
 %% PERMUTATION ANALYSIS
 
 % GLOBAL SETTING
-num_rep     = 1000;
+num_rep     = 10000;
 
 % DEFINITION OF ANALYSIS FUNCTION
 % output values are f-values from anova
@@ -147,20 +147,30 @@ for voi = 1:length(VOI),
 
     % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values 
     tic
-    [bot_CI,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
+    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
     toc 
     
     % AGGREGATE RESULTS FOR EACH VOI
     STAT_RESULTS(voi).bot_CI        = bot_CI;
+    STAT_RESULTS(voi).bot_D         = bot_D;
     STAT_RESULTS(voi).P             = P;
     STAT_RESULTS(voi).M             = true_M;
     
     fprintf(logfileid,'Finished %s \n',VOI{voi});
 end
+save([folder.results.stats,'ioc.mat'],'STAT_RESULTS')
+fprintf(logfileid,'Variables saved');
+
 
 % PERFORMS STATISTICAL ANALYSIS FOR EACH TIMEPOINT OF RAW DATA
-voi = size(STAT_RESULTS,2)+1;
-for t=1:size(subAverage.rawDATA,2)
+window_of_interest      = [10,50]; %in ms after TMS pulse
+window_of_interest      = 100+(window_of_interest*5);
+window_of_interest   =   window_of_interest(1):window_of_interest(2);   
+close all
+figure 
+plot(nanmean(subAverage.rawDATA(:,window_of_interest),1))
+close all
+for t=1:size(window_of_interest,2)
     
     DATA = subAverage.rawDATA(:,t);
 
@@ -170,21 +180,20 @@ for t=1:size(subAverage.rawDATA,2)
     % P Output: A matrix containing for each stimulation intensity the p-value of
     % a two-sided hypothesis test
 
-    [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
+    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
     % AGGREGATE RESULTS FOR EACH VOI
-    STAT_RESULTS(voi).bot_CI(:,:,:,:,t)     = bot_CI;
-    STAT_RESULTS(voi).P(:,:,t)              = P;  
-    STAT_RESULTS(voi).M                     = true_M;
+    STAT_TIMECOURSE.bot_CI(:,:,:,:,t)     = bot_CI;
+    STAT_TIMECOURSE.bot_D(:,:,:,t)        = bot_D;
+    STAT_TIMECOURSE.P(:,:,:,t)            = P;  
+    STAT_TIMECOURSE.M(:,:,:,t)            = true_M;
       
     fprintf(logfileid,'Finished rawDATA Timepoint %i \n',t);
 end
-
+save([folder.results.stats,'ioc_tc.mat'],'STAT_TIMECOURSE')
+fprintf(logfileid,'Timecourse saved');
 % ANALYSIS FINISHED FOR EACH VARIABLE OF INTEREST
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-save([folder.results.stats,'ioc.mat'],'STAT_RESULTS')
 fprintf(logfileid,'Everything saved');
-
 fclose(logfileid);
 %%
 addpath('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\gramm\')
@@ -192,153 +201,120 @@ addpath('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\gramm\')
 figpos = [100 100 1200 400];
 close all
 
-clear g
 x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
+lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
+org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+ulab = unique(lab)
+ulab = ulab([4,6,1,2,3,5]);
+% PLOT LATENCY
 y   = reshape(STAT_RESULTS(3).M,1,[])';
 ylo = reshape(squeeze(STAT_RESULTS(3).bot_CI(1,:,:,:)),1,[])';
 yup = reshape(squeeze(STAT_RESULTS(3).bot_CI(2,:,:,:)),1,[])';
-lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
-org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+
+clear g
 g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
-
 g.geom_interval('geom','area');
-
 g.facet_grid([],org);
-g.set_names('column','','x','Stimulation Intensity (RMT)','y','Latency (ms)','color','Parameter');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Latency (ms)','color','');
 g.set_title('');
-g.set_order_options('color',0);
+g.set_order_options('color',ulab);
 g.axe_property('YLim',[25 28],'YTICK',[20:35]);
 
 figure('Position',figpos);
 g.draw();
+print(gcf,[folder.results.figs,setup.IO.label.VOI{3},'.tif'],'-dtiff')
 
-
-clear g
-x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
+% PLOT MEP
 y   = reshape(STAT_RESULTS(2).M,1,[])';
 ylo = reshape(squeeze(STAT_RESULTS(2).bot_CI(1,:,:,:)),1,[])';
 yup = reshape(squeeze(STAT_RESULTS(2).bot_CI(2,:,:,:)),1,[])';
-lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
-org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+
+clear g
 g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
-
 g.geom_interval('geom','area');
-
 g.facet_grid([],org);
-g.set_names('column','','x','Stimulation Intensity (RMT)','y','P (MEP) in %','color','Parameter');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','P (MEP) in %','color','');
 g.set_title('');
-g.set_order_options('color',0);
+g.set_order_options('color',ulab);
 g.axe_property('YLim',[0 1],'YTICK',[0:0.1:1]);
 
 figure('Position',figpos);
 g.draw();
+print(gcf,[folder.results.figs,setup.IO.label.VOI{2},'.tif'],'-dtiff')
 
+% PLOT AMPLITUDE
 
-
-clear g
-x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
 y   = reshape(STAT_RESULTS(1).M,1,[])';
 ylo = reshape(squeeze(STAT_RESULTS(1).bot_CI(1,:,:,:)),1,[])';
 yup = reshape(squeeze(STAT_RESULTS(1).bot_CI(2,:,:,:)),1,[])';
-lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
-org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+
+clear g
 g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
-
 g.geom_interval('geom','area');
-
 g.facet_grid([],org);
-g.set_names('column','','x','Stimulation Intensity (RMT)','y','Amplitude (Vpp)','color','Parameter');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Amplitude (Vpp)','color','');
 g.set_title('');
-g.set_order_options('color',0);
+g.set_order_options('color',ulab);
 g.axe_property('YLim',[0 700]);
 
 figure('Position',figpos);
 g.draw();
-
-
-
-
-
-
-
-
-
-
-
-
+print(gcf,[folder.results.figs,setup.IO.label.VOI{1},'.tif'],'-dtiff')
 %%
 
+figpos = [100 100 1200 400];
+
+x   = reshape(repmat(setup.IO.SI,1,3),1,[])';
+lab = reshape(repmat(setup.IO.label.ORG,7,1),1,[])';
+org = lab;
+% PLOT LATENCY
+y   = reshape(squeeze(diff(STAT_RESULTS(3).M,[],2)),1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(3).bot_D(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(3).bot_D(2,:,:,:)),1,[])';
 
 clear g
-x   = repmat(setup.IO.SI,1,2)';
-y   = cat(1,STAT_RESULTS(voi).M(:,1,1),STAT_RESULTS(voi).M(:,2,1));
-ylo = cat(2,squeeze(STAT_RESULTS(voi).bot_CI(1,:,1,1)),squeeze(STAT_RESULTS(voi).bot_CI(1,:,2,1)))';
-yup = cat(2,squeeze(STAT_RESULTS(voi).bot_CI(2,:,1,1)),squeeze(STAT_RESULTS(voi).bot_CI(2,:,2,1)))';
-lab = reshape(repmat(setup.IO.label.BI,7,1),1,[]);
-g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab);
-
-
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup); 
 g.geom_interval('geom','area');
+g.facet_grid([],org);
+g.set_title('');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Latency (ms)','color','Parameter');
+g.axe_property('YLim',[-2 2],'YTICK',[-2:2]);
 
-figure('Position',[100 100 800 450]);
-%g.axe_property('YLim',[-10 190]);
+figure('Position',figpos);
 g.draw();
+print(gcf,[folder.results.figs,setup.IO.label.VOI{3},'_delta.tif'],'-dtiff')
 
+% PLOT MEP
+y   = reshape(squeeze(diff(STAT_RESULTS(2).M,[],2)),1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(2).bot_D(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(2).bot_D(2,:,:,:)),1,[])';
 
+clear g
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup); 
+g.geom_interval('geom','area');
+g.facet_grid([],org);
+g.set_title('');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','P (MEP) in %','color','');
+g.axe_property('YLim',[-.5 .5],'YTICK',[-.5:.1:.5]);
 
+figure('Position',figpos);
+g.draw();
+print(gcf,[folder.results.figs,setup.IO.label.VOI{2},'_delta.tif'],'-dtiff')
 
+% PLOT AMPLITUDE
 
+y   = reshape(squeeze(diff(STAT_RESULTS(1).M,[],2)),1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(1).bot_D(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(1).bot_D(2,:,:,:)),1,[])';
 
+clear g
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup); 
+g.geom_interval('geom','area');
+g.facet_grid([],org);
+g.set_title('');
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Amplitude (Vpp)','color','Parameter');
+%g.axe_property('YLim',[0 700]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-%% TO DO PROPER VISUALIZATION
-close all
-figure
-plot(STAT_RESULTS(2).bot_CI(:,:,1,1)','b')
-hold on
-plot(STAT_RESULTS(2).bot_CI(:,:,2,1)','r')
-%%
-
-close all
-for k=1:3,
-    h_fig = figure;
-    h_axe = gca;
-    set(gcf,'Position',[100 100 800 600],'paperpositionmode','auto')
-    hold on
-
-    switch int8(k)
-        case 1, 
-            h_plot = plot(BI)
-            h_lgnd = legend(setup.IO.label.BI);
-        case 2, 
-            h_plot = plot(LM);
-            h_lgnd = legend(setup.IO.label.LM);
-        case 3, 
-            h_plot = plot(M1);
-            h_lgnd = legend(setup.IO.label.M1);
-        otherwise
-            disp('Error, impossible case');
-    end
-    p_any = sum([P(:,k)<.05,P(:,k)<.01,P(:,k)<.001],2);    
-    for si=1:7,
-        if any(p_any(si,:))
-            plot(si,26,'k*');
-        end
-    end
-    
-    set(h_axe,'XLIM',[0 8])
-    set(h_axe,'YLIM',[25 30])
-    set(h_lgnd,'Location','northwest')
-end    
+figure('Position',figpos);
+g.draw();
+print(gcf,[folder.results.figs,setup.IO.label.VOI{1},'_delta.tif'],'-dtiff')

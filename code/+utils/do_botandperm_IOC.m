@@ -1,4 +1,4 @@
-function [bot_CI,P,true_M] = do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup)
+function [bot_CI,bot_D,P,true_M] = do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup)
 
 % PERFORMING REAL ANALYSIS
 % Output: true_VAL(intensity,factor)
@@ -12,9 +12,11 @@ for si=1:7,
     t_idx               = (subAverage.Design(:,end)==si);
     t_values            = DATA(t_idx,:);
     [~,tab,~]           = do_test(t_values,t_design);
+    
     m                   = (grpstats(t_values,t_design(:,1:3)));
     marginal_m          = cat(2,grpstats(m,setup.IO.BI),grpstats(m,setup.IO.LM),grpstats(m,setup.IO.M1));
     true_M(si,:,:)      = marginal_m;
+    
     true_VAL(si,:)      = [tab{2:5,6}];
 end
 
@@ -49,8 +51,7 @@ end
 % PERFORMING BOOTSTRAP ANALYSIS
 % Output: bot_VAL(repetition,intensity,level,factor) values are the 
 % bootstrapped marginal average for each level (true,false) of each factor
-bot_VAL = [];
-pick_list = cat(1,find(setup.IO.BI),find(~setup.IO.BI),find(setup.IO.LM),find(~setup.IO.LM),find(setup.IO.M1),find(~setup.IO.M1));
+bot_M = [];
 for si=1:7,
     for rep=1:num_rep,
         t_idx               = BOT{si}(:,rep);
@@ -60,7 +61,7 @@ for si=1:7,
         m                   = (grpstats(t_values,t_design(:,1:3)));
         marginal_m          = cat(2,grpstats(m,setup.IO.BI),grpstats(m,setup.IO.LM),grpstats(m,setup.IO.M1));   
  
-        bot_VAL(rep,si,:,:) = marginal_m;
+        bot_M(rep,si,:,:) = marginal_m;
     end   
 end
 
@@ -68,5 +69,6 @@ end
 % Output: A matrix containing for each intensity the bootstrapped upper 
 % and lower  95% CI for each factor and level 
 % (CiLow,CiUp,StimulationIntensity,Level,Factor)
-bot_CI = cat(1,quantile(bot_VAL,0.025,1),quantile(bot_VAL,0.975,1));
-
+bot_CI          = cat(1,quantile(bot_M,0.025,1),quantile(bot_M,0.975,1));
+bot_DELTA       = squeeze(diff(bot_M,[],3));
+bot_D           = squeeze(cat(1,quantile(bot_DELTA,0.025,1),quantile(bot_DELTA,0.975,1)));

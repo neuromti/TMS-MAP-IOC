@@ -37,6 +37,7 @@ setup.IO.label.BI   = {'Biphasic','Monophasic'};
 setup.IO.label.LM   = {'90°','45°'};
 setup.IO.label.M1   = {'M1','NPMA'};
 setup.IO.label.ORG  = {'Waveform','Orientation','Location'};
+setup.IO.label.VOI  = {'Amplitude','MEP','Latency'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mapping Data is stored as .mat files in the folder.data.map according to the following schema
 % S%C%.mat, with the % following S indicating anonymized subject ID; and
