@@ -36,6 +36,7 @@ setup.IO.SI         = [90,100,110,120,130,140,150]; % in percent of Resting moto
 setup.IO.label.BI   = {'Biphasic','Monophasic'};
 setup.IO.label.LM   = {'90°','45°'};
 setup.IO.label.M1   = {'M1','NPMA'};
+setup.IO.label.ORG  = {'Waveform','Orientation','Location'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Mapping Data is stored as .mat files in the folder.data.map according to the following schema
 % S%C%.mat, with the % following S indicating anonymized subject ID; and

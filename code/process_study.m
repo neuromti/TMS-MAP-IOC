@@ -139,12 +139,12 @@ for voi = 1:length(VOI),
     eval(['DATA = subAverage.',VOI{voi},';']);
 
     % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values 
-    [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
+    [bot_CI,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
     
     % AGGREGATE RESULTS FOR EACH VOI
     STAT_RESULTS(voi).bot_CI        = bot_CI;
     STAT_RESULTS(voi).P             = P;
-
+    STAT_RESULTS(voi).M             = true_M;
     
     fprintf(logfileid,'Finished %s \n',VOI{voi});
 end
@@ -164,20 +164,116 @@ for t=1:size(subAverage.rawDATA,2)
     [bot_CI,P] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep);
     % AGGREGATE RESULTS FOR EACH VOI
     STAT_RESULTS(voi).bot_CI(:,:,:,:,t)     = bot_CI;
-    STAT_RESULTS(voi).P(:,:,t)              = P;
-    
+    STAT_RESULTS(voi).P(:,:,t)              = P;  
+    STAT_RESULTS(voi).M                     = true_M;
+      
     fprintf(logfileid,'Finished rawDATA Timepoint %i \n',t);
 end
 
 % ANALYSIS FINISHED FOR EACH VARIABLE OF INTEREST
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-save([folder.stat_results,'ioc.mat'],'STAT_RESULTS')
+save([folder.results.stats,'ioc.mat'],'STAT_RESULTS')
 fprintf(logfileid,'Everything saved');
 
 fclose(logfileid);
 %%
+addpath('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\gramm\')
 
+figpos = [100 100 1200 400];
+close all
+
+clear g
+x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
+y   = reshape(STAT_RESULTS(3).M,1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(3).bot_CI(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(3).bot_CI(2,:,:,:)),1,[])';
+lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
+org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
+
+g.geom_interval('geom','area');
+
+g.facet_grid([],org);
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Latency (ms)','color','Parameter');
+g.set_title('');
+g.set_order_options('color',0);
+g.axe_property('YLim',[25 28],'YTICK',[20:35]);
+
+figure('Position',figpos);
+g.draw();
+
+
+clear g
+x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
+y   = reshape(STAT_RESULTS(2).M,1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(2).bot_CI(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(2).bot_CI(2,:,:,:)),1,[])';
+lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
+org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
+
+g.geom_interval('geom','area');
+
+g.facet_grid([],org);
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','P (MEP) in %','color','Parameter');
+g.set_title('');
+g.set_order_options('color',0);
+g.axe_property('YLim',[0 1],'YTICK',[0:0.1:1]);
+
+figure('Position',figpos);
+g.draw();
+
+
+
+clear g
+x   = reshape(repmat(setup.IO.SI,1,2,3),1,[])';
+y   = reshape(STAT_RESULTS(1).M,1,[])';
+ylo = reshape(squeeze(STAT_RESULTS(1).bot_CI(1,:,:,:)),1,[])';
+yup = reshape(squeeze(STAT_RESULTS(1).bot_CI(2,:,:,:)),1,[])';
+lab = cat(2,reshape(repmat(setup.IO.label.BI,7,1),1,[]),reshape(repmat(setup.IO.label.LM,7,1),1,[]),reshape(repmat(setup.IO.label.M1,7,1),1,[]))';
+org = reshape(repmat(setup.IO.label.ORG,14,1),1,[]);
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
+
+g.geom_interval('geom','area');
+
+g.facet_grid([],org);
+g.set_names('column','','x','Stimulation Intensity (RMT)','y','Amplitude (Vpp)','color','Parameter');
+g.set_title('');
+g.set_order_options('color',0);
+g.axe_property('YLim',[0 700]);
+
+figure('Position',figpos);
+g.draw();
+
+
+
+
+
+
+
+
+
+
+
+
+%%
+
+
+clear g
+x   = repmat(setup.IO.SI,1,2)';
+y   = cat(1,STAT_RESULTS(voi).M(:,1,1),STAT_RESULTS(voi).M(:,2,1));
+ylo = cat(2,squeeze(STAT_RESULTS(voi).bot_CI(1,:,1,1)),squeeze(STAT_RESULTS(voi).bot_CI(1,:,2,1)))';
+yup = cat(2,squeeze(STAT_RESULTS(voi).bot_CI(2,:,1,1)),squeeze(STAT_RESULTS(voi).bot_CI(2,:,2,1)))';
+lab = reshape(repmat(setup.IO.label.BI,7,1),1,[]);
+g   = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab);
+
+
+g.geom_interval('geom','area');
+
+figure('Position',[100 100 800 450]);
+%g.axe_property('YLim',[-10 190]);
+g.draw();
 
 
 
@@ -201,7 +297,7 @@ fclose(logfileid);
 %% TO DO PROPER VISUALIZATION
 close all
 figure
-plot(STAT_RESULTS(2).bot_CI(:,:,1,1)','k')
+plot(STAT_RESULTS(2).bot_CI(:,:,1,1)','b')
 hold on
 plot(STAT_RESULTS(2).bot_CI(:,:,2,1)','r')
 %%
