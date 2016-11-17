@@ -3,6 +3,7 @@ data/
 zwischen/
 *.asv
 *.mat
+*.tif
 
 #################
 ## Eclipse

@@ -88,7 +88,7 @@ fclose(logfileid);
 %% PERMUTATION ANALYSIS
 
 % GLOBAL SETTING
-num_rep     = 10000;
+num_rep     = 1000;
 
 % DEFINITION OF ANALYSIS FUNCTION
 % output values are f-values from anova
@@ -135,9 +135,9 @@ end
 
 % LOG
 logfilename = [folder.code,'Logfile.log'];
-logfileid   = fopen(logfilename,'wt');     
-fprintf(logfileid,'Num Reps %i \n ',num_rep);
-fprintf(logfileid,'do_test %s \n',func2str(do_test));
+if exist(logfilename,'file'),delete(logfilename); end
+utils.do_log(logfilename,@()fprintf(logfileid,'Num Reps %i \n ',num_rep));
+utils.do_log(logfilename,@()fprintf(logfileid,'Statistical Value is based on %s \n',func2str(do_test)));
 
 clear STAT_RESULTS;
 VOI = {'ampDATA','mepDATA','latDATA'};
@@ -156,45 +156,42 @@ for voi = 1:length(VOI),
     STAT_RESULTS(voi).P             = P;
     STAT_RESULTS(voi).M             = true_M;
     
-    fprintf(logfileid,'Finished %s \n',VOI{voi});
+    
+    utils.do_log(logfilename,@()fprintf(logfileid,'On %s finished %s \n',datetime('now'),VOI{voi}));
 end
 save([folder.results.stats,'ioc.mat'],'STAT_RESULTS')
-fprintf(logfileid,'Variables saved');
-
+utils.do_log(logfilename,@()fprintf(logfileid,'Variables saved \n'));
 
 % PERFORMS STATISTICAL ANALYSIS FOR EACH TIMEPOINT OF RAW DATA
-window_of_interest      = [10,50]; %in ms after TMS pulse
-window_of_interest      = 100+(window_of_interest*5);
-window_of_interest   =   window_of_interest(1):window_of_interest(2);   
-close all
-figure 
-plot(nanmean(subAverage.rawDATA(:,window_of_interest),1))
-close all
-for t=1:size(window_of_interest,2)
+
+rawDATA = subAverage.rawDATA;
+delete(gcp('nocreate'))
+parpool(4)
+parfor t=1:size(rawDATA,2)
     
-    DATA = subAverage.rawDATA(:,t);
+    DATA = rawDATA(:,t);
 
     % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values     
     % bot_CI Output: A matrix containing for each intensity the bootstrapped upper and lower  95% CI for each
     % factor and level (CiLow,CiUp,StimulationIntensity,Level,Factor)
     % P Output: A matrix containing for each stimulation intensity the p-value of
     % a two-sided hypothesis test
-
+    tic
     [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
+    clk_time = toc
     % AGGREGATE RESULTS FOR EACH VOI
-    STAT_TIMECOURSE.bot_CI(:,:,:,:,t)     = bot_CI;
-    STAT_TIMECOURSE.bot_D(:,:,:,t)        = bot_D;
-    STAT_TIMECOURSE.P(:,:,:,t)            = P;  
-    STAT_TIMECOURSE.M(:,:,:,t)            = true_M;
-      
-    fprintf(logfileid,'Finished rawDATA Timepoint %i \n',t);
+    STAT_TIMECOURSE(t).bot_CI   = bot_CI;
+    STAT_TIMECOURSE(t).bot_D    = bot_D;
+    STAT_TIMECOURSE(t).P        = P;  
+    STAT_TIMECOURSE(t).M        = true_M;
+    utils.do_log(logfilename,@()fprintf(logfileid,'On %s finished rawDATA Timepoint %i after running for %i s \n',datetime('now'),t,int64(clk_time)))
 end
+delete(gcp('nocreate'))
 save([folder.results.stats,'ioc_tc.mat'],'STAT_TIMECOURSE')
-fprintf(logfileid,'Timecourse saved');
+utils.do_log(logfilename,@()fprintf(logfileid,'Workers shut down & Timecourse saved \n'));
 % ANALYSIS FINISHED FOR EACH VARIABLE OF INTEREST
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fprintf(logfileid,'Everything saved');
-fclose(logfileid);
+utils.do_log(logfilename,@()fprintf(logfileid,'Everything saved'));
 %%
 addpath('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\gramm\')
 
@@ -313,8 +310,59 @@ g.geom_interval('geom','area');
 g.facet_grid([],org);
 g.set_title('');
 g.set_names('column','','x','Stimulation Intensity (RMT)','y','Amplitude (Vpp)','color','Parameter');
-%g.axe_property('YLim',[0 700]);
+g.axe_property('YLim',[-300 300]);
 
 figure('Position',figpos);
 g.draw();
 print(gcf,[folder.results.figs,setup.IO.label.VOI{1},'_delta.tif'],'-dtiff')
+%%
+M       = cat(4,STAT_TIMECOURSE.M);
+CI      = cat(5,STAT_TIMECOURSE.bot_CI);
+figpos  = [100 100 1200 400];
+close all
+
+raw_lab = cat(1,setup.IO.label.BI,setup.IO.label.LM,setup.IO.label.M1)';
+x       = [];
+y       = [];
+ylo     = [];
+yup     = [];
+lab     = {};
+org     = {};
+clear g
+
+for fctr = 1:size(M,3)
+    x       = [];
+    y       = [];
+    ylo     = [];
+    yup     = [];
+    lab     = {};
+    org     = {};
+    for si=1:size(M,1)
+        for lvl = 1:size(M,2)       
+            for t=1:size(M,4)
+                x       = cat(1,x,t);
+                lab     = cat(1,lab,raw_lab(lvl,fctr));
+                org     = cat(1,org,num2str(setup.IO.SI(si)));
+                y       = cat(1,y,M(si,lvl,fctr,t));
+                ylo     = cat(1,ylo,CI(1,si,lvl,fctr,t));
+                yup     = cat(1,yup,CI(2,si,lvl,fctr,t));
+            end
+        end
+    end
+    % PLOT LATENCY
+    
+    clear g
+    g       = gramm('x',x,'y',y,'ymin',ylo,'ymax',yup,'color',lab); 
+    g.geom_interval('geom','area');
+    g.facet_grid([],org);
+    g.set_names('column','','x','Time in ms','y','Amplitude in µV','color','');
+    g.set_title('Stimulation Intensity (RMT%)');
+    g.set_order_options('color',raw_lab(:,fctr)');
+    %g.axe_property('YLim',[25 28],'YTICK',[20:35]);
+
+    figure('Position',figpos);
+    g.draw();
+    print(gcf,[folder.results.figs,setup.IO.label.ORG{fctr},'_TimeCourse.tif'],'-dtiff')
+    
+end
+
