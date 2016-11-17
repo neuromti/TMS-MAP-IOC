@@ -362,7 +362,6 @@ for fctr = 1:size(M,3)
 
     figure('Position',figpos);
     g.draw();
-    print(gcf,[folder.results.figs,setup.IO.label.ORG{fctr},'_TimeCourse.tif'],'-dtiff')
-    
+    print(gcf,[folder.results.figs,setup.IO.label.ORG{fctr},'_TimeCourse.tif'],'-dtiff')    
 end
 
