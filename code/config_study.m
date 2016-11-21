@@ -55,10 +55,15 @@ setup.MAP.label.BI  = {'Biphasic','Monophasic'};
 setup.MAP.label.LM  = {'90°','45°'};
 %% Preloading subject parameters (age,sex,rmt)
 % based on tabulated data collected by CK
+load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\IOC_positions.mat');
 [num,str,all]   = xlsread('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\subject_data.xlsx');
 setup.SUB.id    = num(:,1); %corresponding to S% in datasets
-setup.SUB.sex   = logical(num(:,1)); %male 1; female 0;
-setup.SUB.age   = num(:,2); %in years
+setup.SUB.sex   = logical(num(:,2)); %male 1; female 0;
+setup.SUB.age   = num(:,3); %in years
+for idx_put=1:length(setup.SUB.id),
+    idx_take        = setup.SUB.id(idx_put);    
+    setup.SUB.pos{idx_put}  = COORD(idx_take).positions;
+end
 %% Preloading the headmodel for mapping visualization
 load('C:\Users\Robert Bauer\Documents\MATLAB\private_toolbox\symetric_headmodel');
 %%
