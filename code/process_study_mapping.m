@@ -80,17 +80,38 @@ for idx_dataset = 1:length(D),
 end
 fclose(logfileid);
 save([folder.results.stats,'map_interpolated.mat'],'IPOL')
-%%
-DESIGN  = cat(1,IPOL.DESIGN);
+% 
+%% PERMUTATION ANALYSIS
+% GROUP PARAMETERS
+load([folder.results.stats,'map_interpolated.mat'],'IPOL')
 SUB     = cat(1,IPOL.sub_idx);
+[~,sort_idx] = sort(SUB);
+DESIGN  = cat(1,IPOL.DESIGN);
 AMP     = cat(4,IPOL.quad_AMP);
 LAT     = cat(4,IPOL.quad_LAT);
 MEP     = cat(4,IPOL.quad_MEP);
 
-%
+SUB     = SUB(sort_idx);
+DESIGN  = DESIGN(sort_idx,:);
+AMP     = AMP(:,:,:,sort_idx);
+MEP     = MEP(:,:,:,sort_idx);
+LAT     = LAT(:,:,:,sort_idx);
 
 
+% GLOBAL SETTING
+num_rep     = 1000;
 
+% DEFINITION OF ANALYSIS FUNCTION
+% output values are f-values from anova
+% subject as random factor
+% no interactions
+% independently for each SI due to assumption of heteroscedasticity
+do_test = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'});
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PERFORM STATISTICAL ANALYSIS FOR EACH VARIABLE OF INTEREST
+
+do_botandperm_MAP(MEP,DESIGN,SUB,num_rep,do_test);
 
 
 
