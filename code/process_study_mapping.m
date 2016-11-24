@@ -36,51 +36,59 @@ for idx_dataset = 1:length(D),
      
     % Arrange and set index variables
     % Glue conditons and location to data    
-    % @return IPOL.HS and IPOL.ANT as HotSpot and Anterior Location in xyz  
-    % @return IPOL.COND as Condition string
-    % @return IPOL.DESIGN as Design Matrix (Biphasic / Lateromedial) yes/no
     t.s                     = regexp(D(idx_dataset).name,'S\w*');
     t.c                     = regexp(D(idx_dataset).name,'C\w*');
     t.d                     = regexp(D(idx_dataset).name,'.mat');
-    i.data_sub              = int32(str2double(D(idx_dataset).name(t.s+1:t.c-1)));
-    i.data_cond             = int32(str2double(D(idx_dataset).name(t.c+1:t.d-1)));
-    i.sub                   = find(setup.SUB.id==i.data_sub);
-    t.sex                   = setup.SUB.sex(i.sub);
-    t.age                   = setup.SUB.age(i.sub);
-    t.idx                   = i.data_sub;
-    t.pos                   = setup.SUB.pos{i.sub};
-    t.HS                    = [t.pos{i.data_cond+1,2:4}];
-    t.ANT                   = [t.pos{i.data_cond+1,5:7}];
-    IPOL(idx_dataset).HS        = t.HS;
-    IPOL(idx_dataset).ANT       = t.ANT;
-    IPOL(idx_dataset).COND      = setup.MAP.label.all{i.data_cond};
-    IPOL(idx_dataset).DESIGN    = logical([setup.MAP.BI(i.data_cond),setup.MAP.LM(i.data_cond)]);
+    t.data_sub              = int32(str2double(D(idx_dataset).name(t.s+1:t.c-1)));
+    t.data_cond             = int32(str2double(D(idx_dataset).name(t.c+1:t.d-1)));
+    t.sub                   = find(setup.SUB.id==t.data_sub);    
+    t.sex                   = setup.SUB.sex(t.sub);
+    t.age                   = setup.SUB.age(t.sub);
+    
+    IPOL(idx_dataset).HS        = [setup.SUB.pos{t.sub}{t.data_cond+1,2:4}];
+    IPOL(idx_dataset).ANT       = [setup.SUB.pos{t.sub}{t.data_cond+1,5:7}];
+    IPOL(idx_dataset).COND      = setup.MAP.label.all{t.data_cond};
+    IPOL(idx_dataset).DESIGN    = logical([setup.MAP.BI(t.data_cond),setup.MAP.LM(t.data_cond)]);
     IPOL(idx_dataset).sub_sex   = t.sex;
     IPOL(idx_dataset).sub_age   = t.age;
-    IPOL(idx_dataset).sub_idx   = t.idx;
-    
-    clear t i
+    IPOL(idx_dataset).sub_idx   = t.data_sub;
+    clear t
 
     
     % Remove trials with artifacts, calculate MEP+ and center latency,
-    % calculate CoG
-    sub                         = utils.prepare_for_weighting(mapping);
-    
+    sub                         = utils.prepare_for_weighting(mapping);    
     % Interpolate individual subjects MEP+ and latency unto the surface based on squared distance    
-    quad_weights                = utils.calculate_distanceweights(sub.xyz,queried.pos,25);
-       
-    IPOL(idx_dataset).quad_AMP  = quad_weights*sub.amp;
-    IPOL(idx_dataset).quad_MEP  = quad_weights*sub.mep;     
-    IPOL(idx_dataset).quad_LAT  = quad_weights*sub.lat;     
+    [quad_weights,threshold_weights]    = utils.calculate_distanceweights(sub.xyz,queried.pos);
 
-    % Interpolate as above, but based on CoG shifted to M1      ´    
+    IPOL(idx_dataset).quad_AMP      = quad_weights*sub.amp;
+    IPOL(idx_dataset).quad_MEP      = quad_weights*sub.mep;     
+    IPOL(idx_dataset).quad_LAT      = quad_weights*sub.lat;     
+    
+    IPOL(idx_dataset).thresh_AMP    = threshold_weights*sub.amp;
+    IPOL(idx_dataset).thresh_MEP    = threshold_weights*sub.mep;     
+    IPOL(idx_dataset).thresh_LAT    = threshold_weights*sub.lat;     
+
+    % Interpolate as above, but based on CoG shifted to M1   
+    sub                         = utils.calculate_CoG(sub);
     sub                         = utils.shift_by_CoG(sub);
-    shifted_quad_weights        = utils.calculate_distanceweights(sub.shifted_xyz,queried.pos,25);    
+    [shifted_quad_weights,shifted_threshed_weights] = utils.calculate_distanceweights(sub.shifted_xyz,queried.pos);    
+
+    IPOL(idx_dataset).CoG                   = sub.CoG;
+    IPOL(idx_dataset).shifted_quad_AMP      = shifted_quad_weights*sub.amp;
+    IPOL(idx_dataset).shifted_quad_MEP      = shifted_quad_weights*sub.mep;     
+    IPOL(idx_dataset).shifted_quad_LAT      = shifted_quad_weights*sub.lat;   
+    
+    IPOL(idx_dataset).shifted_thresh_AMP    = shifted_threshed_weights*sub.amp;
+    IPOL(idx_dataset).shifted_thresh_MEP    = shifted_threshed_weights*sub.mep;     
+    IPOL(idx_dataset).shifted_thresh_LAT    = shifted_threshed_weights*sub.lat;     
+    
+    % Interpolate as above, but based on CoG shifted to M1 and main axis aligned towards anterior-posterioor     ´    
+    aligned_quad_weights        = utils.calculate_distanceweights(sub.aligned_xyz,queried.pos,25);    
 
     IPOL(idx_dataset).CoG               = sub.CoG;
-    IPOL(idx_dataset).shifted_quad_AMP  = shifted_quad_weights*sub.amp;
-    IPOL(idx_dataset).shifted_quad_MEP  = shifted_quad_weights*sub.mep;     
-    IPOL(idx_dataset).shifted_quad_LAT  = shifted_quad_weights*sub.lat;     
+    IPOL(idx_dataset).aligned_quad_AMP  = aligned_quad_weights*sub.amp;
+    IPOL(idx_dataset).aligned_quad_MEP  = aligned_quad_weights*sub.mep;     
+    IPOL(idx_dataset).aligned_quad_LAT  = aligned_quad_weights*sub.lat;     
     
     fprintf(logfileid,'At %s finished dataset %i \n',datetime('now'),idx_dataset);
 end
@@ -92,98 +100,24 @@ save([folder.results.stats,'map_interpolated.mat'],'IPOL')
 load([folder.results.stats,'map_interpolated.mat'],'IPOL')
 SUB     = cat(1,IPOL.sub_idx);
 [~,sort_idx] = sort(SUB);
-DESIGN  = cat(1,IPOL.DESIGN);
-AMP     = cat(2,IPOL.quad_AMP);
-LAT     = cat(2,IPOL.quad_LAT);
-MEP     = cat(2,IPOL.quad_MEP);
-
+DESIGN  = cat(1,IPOL(sort_idx).DESIGN);
+AMP     = cat(2,IPOL(sort_idx).quad_AMP);
+LAT     = cat(2,IPOL(sort_idx).quad_LAT);
+MEP     = cat(2,IPOL(sort_idx).quad_MEP);
 SUB     = SUB(sort_idx);
-DESIGN  = DESIGN(sort_idx,:);
-AMP     = AMP(:,:,:,sort_idx);
-MEP     = MEP(:,:,:,sort_idx);
-LAT     = LAT(:,:,:,sort_idx);
-
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PERFORM STATISTICAL ANALYSIS FOR EACH VARIABLE OF INTEREST
 num_rep     = 1000;
 
-utils.do_botandperm_MAP(AMP,SUB,DESIGN,folder.results.stats,num_rep)
-
-
-
-
-
-
-%%
-
-x = reshape_to_grid(mean(true_MM,2));
-x = reshape_to_grid(mean(true_MM(:,1)-true_MM(:,2),2));
-close all
-figure
-for z=4:4:64
-    subplot(4,4,(z/4))
-    %contour(X(:,:,1),Y(:,:,1),squeeze(nanmean(x(:,:,z),3)),[0:1:125],'fill','on');   
-    %caxis([0 125])
-
-    contour(X(:,:,1),Y(:,:,1),squeeze(nanmean(x(:,:,z),3)),[-50:50],'fill','on');   
-    caxis([-50 50])
-    hold on
-    plot(-37,-21,'ko','markerfacecolor','k')
-    view([180,-90])
+field_list = fieldnames(IPOL(1));
+f_idx = [];
+for f=1:length(field_list),
+    f_idx = [f_idx,~isempty([regexp(field_list{f},'MEP'),regexp(field_list{f},'AMP'),regexp(field_list{f},'LAT')])];
 end
+field_list = {field_list{find(f_idx)}};
 
-
-%%
-
-x = reshape_to_grid(true_STATVAL(:,2));
-x = -log10(reshape_to_grid(1-fcdf(true_STATVAL(:,2),1,31)));
-%x = -log10(reshape_to_grid(1-fcdf(true_STATVAL(:,1),1,31)));
-close all
-figure
-%contour(X(:,:,1),Y(:,:,1),squeeze(nanmean(x,3)),25)
-[~,hdl_c] = contour(X(:,:,1),Y(:,:,1),squeeze(nanmean(x,3)),1.3:.05:3,'fill','on');
-%
-caxis(gca,[1.3 3])
-hold on
-plot(-37,-21,'ko','markerfacecolor','k')
-view([180,-90])
-
-
-
-%%
-F = [];
-for i_x=1:map_dimensions(1),
-    for i_y=1:map_dimensions(2),
-        %for i_z=1:map_dimensions(3),
-        i_z = 1;
-            [p,tab,stats]       = anovan(squeeze(nanmean(MEP(i_x,i_y,:,:),3)),cat(2,DESIGN,SUB),'display','off','model',[1 0 0;0 1 0;1 1 0;0 0 1]);
-            F(i_x,i_y,i_z,:)    = [tab{2:4,6}];
-        %end
-    end
+for field_idx = 1:length(field_list),
+    eval(['DATA = cat(2,IPOL(sort_idx).',field_list{field_idx},');'])
+    utils.do_botandperm_MAP(DATA,SUB,DESIGN,[folder.results.stats,field_list{field_idx},'\'],num_rep);
 end
-
-
-
-close all
-for k=1:3,
-    figure
-    set(gcf,'position',[100 100 [10,10].*map_dimensions(1:2)])
-    contour(X(:,:,1),Y(:,:,1),F(:,:,k),25)
-    hold on
-    colorbar
-    plot(-31,-31,'ko','markerfacecolor','k')
-end
-
-%%    Code Test by Visual Inspection / Plotting    
-x = nanmean(LAT,4);
-[h,p,ci,stats] = ttest(LAT,0,'dim',4);
-[h,p,ci,stats] = ttest(AMP,0,'dim',4);
-x = median(MEP,4);
-%x = stats.tstat;
-%x = p<0.05;
-
-hold on
-contour(X(:,:,1),Y(:,:,1),squeeze(nanmean(x,3)),25)
-view([180,-90])
-
-%colormap(diverging_bwr_40_95_c42_n256)

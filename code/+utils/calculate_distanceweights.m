@@ -1,13 +1,13 @@
-function [quadratic_weights,thresholded_vicinity,linear_weights] = calculate_distanceweights(sub_xyz,group_xyz,thresh_mm)
+function [quadratic_weights,threshold_weights,linear_weights] = calculate_distanceweights(sub_xyz,group_xyz,thresh_mm)
 % Calculates for all points on the group grid the normalized weights based on distance
 % @param sub_xyz is the individuals mapping grid
 % @param group_xyz the mapping grid for the whole group
 % @param thresh_mm is the distance threshold: default threshold is 50 mm
 % @returns quadratic_weigths as matrix of normalized weights (squared distance) 
 % @returns utresholded_weigths as matrix of normalized weights (linear distance) 
-% @returns thresholded_vicinity as matrix of grid points in vicinity of
+% @returns threshold_weights as matrix of grid points in vicinity of
 
-if nargin <3, thresh_mm = 50; end  
+if nargin <3, thresh_mm = 15; end  
 
 %calculate distance for all points in the group-grid
 all_dist                = pdist2(sub_xyz,group_xyz)';
@@ -32,6 +32,9 @@ end
 % thresholded for maximal accepted distance
 if nargout>=2,
     thresholded_vicinity    = all_dist<=thresh_mm;
+    t_norm                  = repmat(sum(thresholded_vicinity,2)+eps,1,size(thresholded_vicinity,2));
+    threshold_weights        = (thresholded_vicinity./t_norm);
+    clear t_norm thresholded_vicinity
 end
 
 % Calculate unthresholded linear Weights based on inverse of distance

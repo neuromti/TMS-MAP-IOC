@@ -1,9 +1,11 @@
 function [bot_CI,bot_D,P,true_MM] = do_botandperm_MAP(DATA,SUB,DESIGN,lcl_folder,num_rep)
 
+non_parametric = false;
+
 if ~exist(lcl_folder,'dir'), mkdir(lcl_folder); end
 
 data_dim        = size(DATA);
-DATA            = reshape(DATA,prod(data_dim(1:3)),[]);
+
 % DEFINITION OF ANALYSIS FUNCTION
 % output values are f-values from anova
 % subject as random factor
@@ -42,6 +44,14 @@ else
     load([lcl_folder,'map_true_stats.mat'],'true_MM','true_STATVAL','true_P');
 end
 
+
+%%
+if ~nonparametric, 
+    warning('You chose not to run permutation and bootstrap analysis!')
+    return;
+else
+    warning('Starting permutation and bootstrap analysis!')
+end
 %% ------------------------------------------------------------------------
 % MIXING MATRICES
 %
