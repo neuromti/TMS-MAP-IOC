@@ -1,4 +1,4 @@
-function [quadratic_weights,thresholded_vicinity,linear_weights] = distanceweights_groupgrid(sub_xyz,group_xyz,thresh_mm)
+function [quadratic_weights,thresholded_vicinity,linear_weights] = calculate_distanceweights(sub_xyz,group_xyz,thresh_mm)
 % Calculates for all points on the group grid the normalized weights based on distance
 % @param sub_xyz is the individuals mapping grid
 % @param group_xyz the mapping grid for the whole group

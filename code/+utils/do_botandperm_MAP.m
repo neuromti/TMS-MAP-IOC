@@ -1,8 +1,50 @@
-function [bot_CI,bot_D,P,true_M] = do_botandperm_MAP(DATA,SUB,DESIGN,num_rep,do_test)
+function [bot_CI,bot_D,P,true_MM] = do_botandperm_MAP(DATA,SUB,DESIGN,lcl_folder,num_rep)
 
-data_dim    = size(DATA);
-DATA        = reshape(DATA,prod(data_dim(1:3)),[]);
+if ~exist(lcl_folder,'dir'), mkdir(lcl_folder); end
 
+data_dim        = size(DATA);
+DATA            = reshape(DATA,prod(data_dim(1:3)),[]);
+% DEFINITION OF ANALYSIS FUNCTION
+% output values are f-values from anova
+% subject as random factor
+% no interactions
+% independently for each SI due to assumption of heteroscedasticity
+%do_test         = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'});
+do_test         = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'},'model',[1 0 0;0 1 0;1 1 0;0 0 1]);
+% Added do_margmean for speed in estimation of marginal means w/o interactions
+do_margmean     = @(x,y)[grpstats(x,y(:,1));grpstats(x,y(:,2))]';
+%% ------------------------------------------------------------------------
+% PERFORMING TRUE ANALYSIS
+%
+% Output: true_VAL(intensity,factor)
+% analysis function based on earlier anonymous definition
+% Output: true_M(intensity,level,factor) based on marginal average
+
+if ~exist([lcl_folder,'map_true_stats.mat'],'file')
+    t_design        = cat(2,DESIGN,SUB);
+    true_STATVAL    = [];
+    true_MM         = [];
+    true_P          = [];
+    delete(gcp('nocreate'));
+    obj_pool    = parpool(4);
+    parfor i_pos=1:size(DATA,1),     
+        %tic
+        t_data                  = (DATA(i_pos,:))';
+        [~,tab,~]               = do_test(t_data,t_design);
+        true_MM(i_pos,:)        = do_margmean(t_data,t_design);    
+        true_STATVAL(i_pos,:)   = [tab{2:5,6}];
+        true_P(i_pos,:)         = [tab{2:5,7}];
+        %utils.toc_to_estimate(toc,data_dim(1));    
+    end
+    delete(obj_pool);
+    save([lcl_folder,'map_true_stats.mat'],'true_MM','true_STATVAL','true_P');
+else
+    load([lcl_folder,'map_true_stats.mat'],'true_MM','true_STATVAL','true_P');
+end
+
+%% ------------------------------------------------------------------------
+% MIXING MATRICES
+%
 % CONSTRUCTION OF THE PERMUTATION ARRAY
 % Output: A cell array containing for each stimulation intensity a matrix for later design matrix permutation 
 PERM        = [];
@@ -30,53 +72,35 @@ for rep=1:num_rep,
     BOT{rep} = bot_set;
 end
 
-% PERFORMING TRUE ANALYSIS
-% Output: true_VAL(intensity,factor)
-% analysis function based on earlier anonymous definition
-% Output: true_M(intensity,level,factor) based on marginal average
-
-TODO :MAKE FASTER!
-
-%--------------------------------------------------------------------------
+%% ------------------------------------------------------------------------
+% PERMUTATION ANALYSIS 
+%
 % PERFORMING PERMUTATION ANALYSIS
 % Output: perm_VAL(repetition,intensity,factor)
 % analysis function based on earlier anonymous definition
-t_design = cat(2,DESIGN);
-perm_M   = [];
-for i_pos=1:size(DATA,1),
-    t_values            = DATA(i_pos,:);  
-    t_values            = (t_values(PERM));
-    do_grp              = @(x)[grpstats(x,t_design(:,1));grpstats(x,t_design(:,2))]';
-    m                   = (do_grp(t_values));
-    perm_M              = cat(3,perm_M,cat(2,m(:,1)-m(:,2),m(:,3)-m(:,4)));  
+
+if ~exist([lcl_folder,'map_perm_stats.mat'],'file')
+    t_design        = cat(2,DESIGN,SUB);
+    perm_MM         = NaN(size(DATA,1),num_rep,4);
+    perm_STATVAL    = NaN(size(DATA,1),num_rep,size(t_design,2));
+    parfor i_pos=1:size(DATA,1),
+        tic
+        t_data                  = (DATA(i_pos,:))';
+        t_data                  = (t_data(PERM));  
+        perm_MM(i_pos,:,:)      = do_margmean(t_data,t_design);    
+        for rep=1:num_rep,
+            [~,tab,~]               = do_test(t_data(:,rep),t_design);
+            perm_STATVAL(i_pos,rep,:)  = [tab{2:5,6}];
+        end
+        utils.toc_to_estimate(toc,size(DATA,1));
+    end
+    delete(obj_pool);
+    save([lcl_folder,'map_perm_stats.mat'],'perm_MM','perm_STATVAL')
+else
+    load([lcl_folder,'map_perm_stats.mat'],'perm_MM','perm_STATVAL')
 end
 
 
-
-
-
-
-
-
-
-
-
-true_VAL    = [];
-true_M      = [];
-for si=1:7,
-    t_sel               = (subAverage.Design(:,end)==si);
-    t_design            = subAverage.Design(t_sel,1:4);      
-    t_idx               = (subAverage.Design(:,end)==si);
-    t_values            = DATA(t_idx,:);
-    [~,tab,~]           = do_test(t_values,t_design);
-    
-
-    true_M(si,:,:)      = marginal_m;
-    
-    true_VAL(si,:)      = [tab{2:5,6}];
-end
-
-%--------------------------------------------------------------------------
 % PERFORMING PERMUTATION ANALYSIS
 % Output: perm_VAL(repetition,intensity,factor)
 % analysis function based on earlier anonymous definition
@@ -103,8 +127,10 @@ for si=1:7,
     P(si,:)     = t_p;
 end
 
-%--------------------------------------------------------------------------
-% PERFORMING BOOTSTRAP ANALYSIS
+%% ------------------------------------------------------------------------
+% BOOTSTRAP ANALYSIS 
+%
+% PERFORMING
 % Output: bot_VAL(repetition,intensity,level,factor) values are the 
 % bootstrapped marginal average for each level (true,false) of each factor
 bot_M = [];

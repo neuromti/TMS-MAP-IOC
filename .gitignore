@@ -1,6 +1,7 @@
 BACKUP/
 data/
 zwischen/
+code/scraps/
 *.asv
 *.mat
 *.tif
