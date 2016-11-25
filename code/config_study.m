@@ -75,7 +75,14 @@ headmodel.pos         = single(sfc.bnd.pnt);
 headmodel.tri         = single(sfc.bnd.tri);
 clear sfc
 % Aligned Surface 
-[X,Y,Z] = (meshgrid(linspace(-3,3,25),linspace(-3,3,25),linspace(-3,3,10)));
-gridmodel.pos       = single(cat(2,reshape(X,[],1),reshape(Y,[],1),reshape(Z,[],1)));
+%gridmodel.resolution                    = [25,50,3];
+%[gridmodel.X,gridmodel.Y,gridmodel.Z]   = (meshgrid(linspace(-35,35,gridmodel.resolution(1)),linspace(-65,65,gridmodel.resolution(2)),linspace(-1,1,gridmodel.resolution(3))));
+%gridmodel.pos                           = single(cat(2,reshape(gridmodel.X,[],1),reshape(gridmodel.Y,[],1),reshape(gridmodel.Z,[],1)));
+%
+gridmodel.resolution                    = [50,100,1];
+[gridmodel.X,gridmodel.Y,gridmodel.Z]   = (meshgrid(linspace(-25,25,gridmodel.resolution(1)),linspace(-50,50,gridmodel.resolution(2)),linspace(0,0,gridmodel.resolution(3))));
+gridmodel.pos                           = single(cat(2,reshape(gridmodel.X,[],1),reshape(gridmodel.Y,[],1),reshape(gridmodel.Z,[],1)));
+
+
 %%
 save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder')

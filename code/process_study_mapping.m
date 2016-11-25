@@ -24,6 +24,7 @@ D(IsArtifacted)     = [];
 
 %%
 clear IPOL SHFT ALGN
+fprintf('[')
 for idx_dataset = 1:length(D),    
        
     % Load dataset
@@ -41,46 +42,64 @@ for idx_dataset = 1:length(D),
     sub.CoG                         = utils.calculate_CoG(sub);
     sub.HS                          = utils.get_HS(setup,sub);
     sub.ANT                         = utils.get_ANT(setup,sub);
-    
+    sub.GridOrigin                  = utils.get_GridOrigin(sub);
     SUB(idx_dataset)                = sub;
     
-    % Interpolate individual subjects MEP+ and latency unto the surface based on squared distance    
-    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.xyz,headmodel.pos);
-    IPOL(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);    
-    clear quad_weights threshed_weights
-    
-    % Interpolate as above, but based on CoG shifted to M1   
-    sub                                     = utils.shift_by_CoG(sub);
-    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.shifted_xyz,headmodel.pos);    
-    SHFT(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);   
-    clear quad_weights threshed_weights
-    
+    fprintf('-')
+%     
+%     % Interpolate individual subjects MEP+ and latency unto the surface based on squared distance    
+%     [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.xyz,headmodel.pos);
+%     IPOL(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);    
+%     clear quad_weights threshed_weights
+%     fprintf('\b%s','\')
+%     
+%     % Interpolate as above, but based on CoG shifted to M1   
+%     sub                                     = utils.shift_by_CoG(sub);
+%     [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.shifted_xyz,headmodel.pos);    
+%     SHFT(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);   
+%     clear quad_weights threshed_weights
+%     fprintf('\b%s','|')
+%   
     % Interpolate as above, but based on CoG shifted to M1 and main axis aligned towards anterior-posterioor     ´    
-    sub                                     = utils.normalize_by_HsAnt(sub,setup);        
-    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.aligned_xyz,gridmodel.pos,.5);         
+    sub                                     = utils.normalize_by_grid(sub);        
+    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.aligned_xyz,gridmodel.pos,5);         
     ALGN(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);
     clear quad_weights threshed_weights
+    fprintf('\b%s','/')
     
     % Log
+    fprintf('\b%s','.')
     fprintf(logfileid,'At %s finished dataset %i \n',datetime('now'),idx_dataset);
 end
+fprintf(']\n')
 fclose(logfileid);
 save([folder.results.stats,'map_subject_data.mat'],'SUB')
-save([folder.results.stats,'map_interpolated.mat'],'IPOL')
-save([folder.results.stats,'map_shift_interpolated.mat'],'SHFT')
+%save([folder.results.stats,'map_interpolated.mat'],'IPOL')
+%save([folder.results.stats,'map_shift_interpolated.mat'],'SHFT')
 save([folder.results.stats,'map_normalized_interpolated.mat'],'ALGN')
 %% PERMUTATION ANALYSIS
 % GROUP PARAMETERS
 % mean(grpstats(cat(1,IPOL.ANT),SUB))-mean(grpstats(cat(1,IPOL.HS),SUB));
 
-load([folder.results.stats,'map_interpolated.mat'],'IPOL')
-SUB     = cat(1,IPOL.sub_idx);
-[~,sort_idx] = sort(SUB);
-DESIGN  = cat(1,IPOL(sort_idx).DESIGN);
+load([folder.results.stats,'map_subject_data.mat'],'SUB')
+SUBID   = cat(1,SUB.subID);
+[~,sort_idx] = sort(SUBID);
+DESIGN  = cat(1,SUB(sort_idx).DesignMatrix);
+SUBID     = SUBID(sort_idx);
+%%
+
+
+
+
+
+
+
+
+%%
 AMP     = cat(2,IPOL(sort_idx).quad_AMP);
 LAT     = cat(2,IPOL(sort_idx).quad_LAT);
 MEP     = cat(2,IPOL(sort_idx).quad_MEP);
-SUB     = SUB(sort_idx);
+
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PERFORM STATISTICAL ANALYSIS FOR EACH VARIABLE OF INTEREST
