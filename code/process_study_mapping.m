@@ -8,7 +8,7 @@ addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MA
 cmap        = linear_kry_5_95_c72_n256;
 set(groot,'DefaultFigureColormap',cmap)
 
-load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder');
+load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder');
 
 %% loading data
 logfilename = [folder.code,'Logfile.log'];
@@ -22,81 +22,57 @@ D           = dir([folder.data.map,'\*.mat']);
 IsArtifacted        = utils.check_artifacts(folder.data.map);
 D(IsArtifacted)     = [];
 
-% Define the query grid based on surface mesh-grid 
-sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_white_left.mat');
-clear queried
-queried.pos         = sfc.bnd.pnt;
-queried.tri         = sfc.bnd.tri;
 %%
-clear IPOL 
+clear IPOL SHFT ALGN
 for idx_dataset = 1:length(D),    
        
     % Load dataset
     load([folder.data.map,D(idx_dataset).name]);
-     
-    % Arrange and set index variables
-    % Glue conditons and location to data    
-    t.s                     = regexp(D(idx_dataset).name,'S\w*');
-    t.c                     = regexp(D(idx_dataset).name,'C\w*');
-    t.d                     = regexp(D(idx_dataset).name,'.mat');
-    t.data_sub              = int32(str2double(D(idx_dataset).name(t.s+1:t.c-1)));
-    t.data_cond             = int32(str2double(D(idx_dataset).name(t.c+1:t.d-1)));
-    t.sub                   = find(setup.SUB.id==t.data_sub);    
-    t.sex                   = setup.SUB.sex(t.sub);
-    t.age                   = setup.SUB.age(t.sub);
-    
-    IPOL(idx_dataset).HS        = [setup.SUB.pos{t.sub}{t.data_cond+1,2:4}];
-    IPOL(idx_dataset).ANT       = [setup.SUB.pos{t.sub}{t.data_cond+1,5:7}];
-    IPOL(idx_dataset).COND      = setup.MAP.label.all{t.data_cond};
-    IPOL(idx_dataset).DESIGN    = logical([setup.MAP.BI(t.data_cond),setup.MAP.LM(t.data_cond)]);
-    IPOL(idx_dataset).sub_sex   = t.sex;
-    IPOL(idx_dataset).sub_age   = t.age;
-    IPOL(idx_dataset).sub_idx   = t.data_sub;
-    clear t
-
+   
+    sub = struct();
+    % Arrange and set index variables    
+    % Glue conditons and location to data     
+    sub                             = utils.glue_dataset(D(idx_dataset).name,setup,sub);
     
     % Remove trials with artifacts, calculate MEP+ and center latency,
-    sub                         = utils.prepare_for_weighting(mapping);    
+    sub                             = utils.prepare_data(mapping,sub);   
+
+    % Estimate or Get Points of Interest for the Subject 
+    sub.CoG                         = utils.calculate_CoG(sub);
+    sub.HS                          = utils.get_HS(setup,sub);
+    sub.ANT                         = utils.get_ANT(setup,sub);
+    
+    SUB(idx_dataset)                = sub;
+    
     % Interpolate individual subjects MEP+ and latency unto the surface based on squared distance    
-    [quad_weights,threshold_weights]    = utils.calculate_distanceweights(sub.xyz,queried.pos);
-
-    IPOL(idx_dataset).quad_AMP      = quad_weights*sub.amp;
-    IPOL(idx_dataset).quad_MEP      = quad_weights*sub.mep;     
-    IPOL(idx_dataset).quad_LAT      = quad_weights*sub.lat;     
+    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.xyz,headmodel.pos);
+    IPOL(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);    
+    clear quad_weights threshed_weights
     
-    IPOL(idx_dataset).thresh_AMP    = threshold_weights*sub.amp;
-    IPOL(idx_dataset).thresh_MEP    = threshold_weights*sub.mep;     
-    IPOL(idx_dataset).thresh_LAT    = threshold_weights*sub.lat;     
-
     % Interpolate as above, but based on CoG shifted to M1   
-    sub                         = utils.calculate_CoG(sub);
-    sub                         = utils.shift_by_CoG(sub);
-    [shifted_quad_weights,shifted_threshed_weights] = utils.calculate_distanceweights(sub.shifted_xyz,queried.pos);    
-
-    IPOL(idx_dataset).CoG                   = sub.CoG;
-    IPOL(idx_dataset).shifted_quad_AMP      = shifted_quad_weights*sub.amp;
-    IPOL(idx_dataset).shifted_quad_MEP      = shifted_quad_weights*sub.mep;     
-    IPOL(idx_dataset).shifted_quad_LAT      = shifted_quad_weights*sub.lat;   
-    
-    IPOL(idx_dataset).shifted_thresh_AMP    = shifted_threshed_weights*sub.amp;
-    IPOL(idx_dataset).shifted_thresh_MEP    = shifted_threshed_weights*sub.mep;     
-    IPOL(idx_dataset).shifted_thresh_LAT    = shifted_threshed_weights*sub.lat;     
+    sub                                     = utils.shift_by_CoG(sub);
+    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.shifted_xyz,headmodel.pos);    
+    SHFT(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);   
+    clear quad_weights threshed_weights
     
     % Interpolate as above, but based on CoG shifted to M1 and main axis aligned towards anterior-posterioor     ´    
-    aligned_quad_weights        = utils.calculate_distanceweights(sub.aligned_xyz,queried.pos,25);    
-
-    IPOL(idx_dataset).CoG               = sub.CoG;
-    IPOL(idx_dataset).aligned_quad_AMP  = aligned_quad_weights*sub.amp;
-    IPOL(idx_dataset).aligned_quad_MEP  = aligned_quad_weights*sub.mep;     
-    IPOL(idx_dataset).aligned_quad_LAT  = aligned_quad_weights*sub.lat;     
+    sub                                     = utils.normalize_by_HsAnt(sub,setup);        
+    [quad_weights,threshed_weights]         = utils.calculate_distanceweights(sub.aligned_xyz,gridmodel.pos,.5);         
+    ALGN(idx_dataset)                       = utils.perform_weighting(sub,quad_weights,threshed_weights);
+    clear quad_weights threshed_weights
     
+    % Log
     fprintf(logfileid,'At %s finished dataset %i \n',datetime('now'),idx_dataset);
 end
 fclose(logfileid);
+save([folder.results.stats,'map_subject_data.mat'],'SUB')
 save([folder.results.stats,'map_interpolated.mat'],'IPOL')
-% 
+save([folder.results.stats,'map_shift_interpolated.mat'],'SHFT')
+save([folder.results.stats,'map_normalized_interpolated.mat'],'ALGN')
 %% PERMUTATION ANALYSIS
 % GROUP PARAMETERS
+% mean(grpstats(cat(1,IPOL.ANT),SUB))-mean(grpstats(cat(1,IPOL.HS),SUB));
+
 load([folder.results.stats,'map_interpolated.mat'],'IPOL')
 SUB     = cat(1,IPOL.sub_idx);
 [~,sort_idx] = sort(SUB);

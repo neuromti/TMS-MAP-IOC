@@ -60,11 +60,22 @@ load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\IOC_positions.mat');
 setup.SUB.id    = num(:,1); %corresponding to S% in datasets
 setup.SUB.sex   = logical(num(:,2)); %male 1; female 0;
 setup.SUB.age   = num(:,3); %in years
+
 for idx_put=1:length(setup.SUB.id),
-    idx_take        = setup.SUB.id(idx_put);    
+    idx_take                = setup.SUB.id(idx_put);    
     setup.SUB.pos{idx_put}  = COORD(idx_take).positions;
+    setup.HS(idx_put,:)     = nanmean(cat(1,[COORD(idx_take).positions{2:end,2}],[COORD(idx_take).positions{2:end,3}],[COORD(idx_take).positions{2:end,4}]),2);
+    setup.ANT(idx_put,:)    = nanmean(cat(1,[COORD(idx_take).positions{2:end,5}],[COORD(idx_take).positions{2:end,6}],[COORD(idx_take).positions{2:end,7}]),2);    
 end
-%% Preloading the headmodel for mapping visualization
-load('C:\Users\Robert Bauer\Documents\MATLAB\private_toolbox\symetric_headmodel');
 %%
-save([folder.code,'config.mat'],'headmodel','setup','folder')
+% Define the query grid based on surface mesh-grid 
+sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_white_left.mat');
+clear headmodel
+headmodel.pos         = single(sfc.bnd.pnt);
+headmodel.tri         = single(sfc.bnd.tri);
+clear sfc
+% Aligned Surface 
+[X,Y,Z] = (meshgrid(linspace(-3,3,25),linspace(-3,3,25),linspace(-3,3,10)));
+gridmodel.pos       = single(cat(2,reshape(X,[],1),reshape(Y,[],1),reshape(Z,[],1)));
+%%
+save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder')

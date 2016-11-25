@@ -24,7 +24,7 @@ end
 % Calculate quadratic Weights based on inverse of quadratic distance
 if nargout>=1,
     t_norm                  = repmat(sum(t_quad_invdist,2),1,size(t_quad_invdist,2));
-    quadratic_weights       = (t_quad_invdist./t_norm);
+    quadratic_weights       =single((t_quad_invdist./t_norm));
     clear t_norm t_quad_invdist
 end
 
@@ -33,7 +33,7 @@ end
 if nargout>=2,
     thresholded_vicinity    = all_dist<=thresh_mm;
     t_norm                  = repmat(sum(thresholded_vicinity,2)+eps,1,size(thresholded_vicinity,2));
-    threshold_weights        = (thresholded_vicinity./t_norm);
+    threshold_weights       = single((thresholded_vicinity./t_norm));
     clear t_norm thresholded_vicinity
 end
 
@@ -41,6 +41,8 @@ end
 % Consider that weights should be a weighted average, i.e. norm(x,1) should be equal to 1;
 if nargout>=3,
     t_norm                  = repmat(sum(t_linear_invdist,2),1,size(t_linear_invdist,2));
-    linear_weights          = (t_linear_invdist./t_norm);
+    linear_weights          = single((t_linear_invdist./t_norm));
     clear t_norm t_linear_invdist
 end
+
+
