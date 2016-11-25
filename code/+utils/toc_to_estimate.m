@@ -1,16 +1,20 @@
 function toc_to_estimate(tm,num_rep)
-    % full time estimate in s
-    ntm_in_s = tm*num_rep;
-    rem_in_s = rem(ntm_in_s,60);
-    % converted to min
-    ntm_in_m = floor(ntm_in_s/60);
-    rem_in_m = rem(ntm_in_m,60);
-    % converted to h
-    ntm_in_h = floor(ntm_in_m/60);
-    rem_in_h = rem(ntm_in_h,60);
-    % converted to d
-    ntm_in_d = floor(ntm_in_h/24);
-    rem_in_d = rem(ntm_in_d,24);
-    
-    fprintf('Will probably run for %i days %i hours %i minutes and %0.0f seconds! \n',rem_in_d,rem_in_h,rem_in_m,rem_in_s)
+
+breakDown = @(x,scaler)[floor(x*scaler),(x*scaler)-floor(x*scaler)];
+
+% Converted to weeks      
+divisor     = (60*60*24*7);
+fctr        = num_rep/divisor;
+time_weeks  = (tm*fctr);
+
+show_time       = [];
+show_time(1,:)  = breakDown(time_weeks,1); %weeks
+unit_scaler     = [1,7,24,60,60];
+for unit_idx = 2:5, %days to seconds
+show_time(unit_idx,:)  = breakDown(show_time(unit_idx-1,2),unit_scaler(unit_idx));
+end
+
+% Display estimated result   
+fprintf('Will probably run for %0.0f weeks %0.0f days %0.0f hours %0.0f minutes and %0.0f seconds! \n',show_time(:,1)')
+
 end

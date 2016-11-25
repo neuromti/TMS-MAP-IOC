@@ -60,11 +60,29 @@ load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\IOC_positions.mat');
 setup.SUB.id    = num(:,1); %corresponding to S% in datasets
 setup.SUB.sex   = logical(num(:,2)); %male 1; female 0;
 setup.SUB.age   = num(:,3); %in years
+
 for idx_put=1:length(setup.SUB.id),
-    idx_take        = setup.SUB.id(idx_put);    
+    idx_take                = setup.SUB.id(idx_put);    
     setup.SUB.pos{idx_put}  = COORD(idx_take).positions;
+    setup.HS(idx_put,:)     = nanmean(cat(1,[COORD(idx_take).positions{2:end,2}],[COORD(idx_take).positions{2:end,3}],[COORD(idx_take).positions{2:end,4}]),2);
+    setup.ANT(idx_put,:)    = nanmean(cat(1,[COORD(idx_take).positions{2:end,5}],[COORD(idx_take).positions{2:end,6}],[COORD(idx_take).positions{2:end,7}]),2);    
 end
-%% Preloading the headmodel for mapping visualization
-load('C:\Users\Robert Bauer\Documents\MATLAB\private_toolbox\symetric_headmodel');
 %%
-save([folder.code,'config.mat'],'headmodel','setup','folder')
+% Define the query grid based on surface mesh-grid 
+sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_white_left.mat');
+clear headmodel
+headmodel.pos         = single(sfc.bnd.pnt);
+headmodel.tri         = single(sfc.bnd.tri);
+clear sfc
+% Aligned Surface 
+%gridmodel.resolution                    = [25,50,3];
+%[gridmodel.X,gridmodel.Y,gridmodel.Z]   = (meshgrid(linspace(-35,35,gridmodel.resolution(1)),linspace(-65,65,gridmodel.resolution(2)),linspace(-1,1,gridmodel.resolution(3))));
+%gridmodel.pos                           = single(cat(2,reshape(gridmodel.X,[],1),reshape(gridmodel.Y,[],1),reshape(gridmodel.Z,[],1)));
+%
+gridmodel.resolution                    = [50,100,1];
+[gridmodel.X,gridmodel.Y,gridmodel.Z]   = (meshgrid(linspace(-25,25,gridmodel.resolution(1)),linspace(-50,50,gridmodel.resolution(2)),linspace(0,0,gridmodel.resolution(3))));
+gridmodel.pos                           = single(cat(2,reshape(gridmodel.X,[],1),reshape(gridmodel.Y,[],1),reshape(gridmodel.Z,[],1)));
+
+
+%%
+save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder')
