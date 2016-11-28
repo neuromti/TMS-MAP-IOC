@@ -1,21 +1,19 @@
-function [bot_CI,bot_D,P,true_MM] = do_botandperm_MAP(DATA,SUB,DESIGN,lcl_folder,num_rep)
+function [true_M,true_P,perm_P,bot_CI,bot_P] = do_botandperm_MAP(DATA,SUBID,DESIGN,NUM_REP)
 
-flag_nonparametric = false;
-
-if ~exist(lcl_folder,'dir'), mkdir(lcl_folder); end
-
+clc
+if nargout<3,
+    flag_nonparametric = false;
+else
+    flag_nonparametric = true;
+end
 data_dim        = size(DATA);
 
 % DEFINITION OF ANALYSIS FUNCTION
-% output values are f-values from anova
-% subject as random factor
-% no interactions
-% independently for each SI due to assumption of heteroscedasticity
-%do_test         = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'});
+NUM_REP         = 1000;
 DEF_MODEL       = [1 0 0;0 1 0;1 1 0;0 0 1];
+DESIGN_MATRIX   = cat(2,DESIGN,SUBID);
+PICK_K          = 2:5;
 do_test         = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'},'model',DEF_MODEL);
-% Added do_margmean for speed in estimation of marginal means w/o interactions
-do_margmean     = @(x,y)[grpstats(x,y(:,1));grpstats(x,y(:,2))]';
 %% ------------------------------------------------------------------------
 % PERFORMING TRUE ANALYSIS
 %
@@ -23,28 +21,18 @@ do_margmean     = @(x,y)[grpstats(x,y(:,1));grpstats(x,y(:,2))]';
 % analysis function based on earlier anonymous definition
 % Output: true_M(intensity,level,factor) based on marginal average
 
-if ~exist([lcl_folder,'map_true_stats.mat'],'file')
-    t_design        = cat(2,DESIGN,SUB);
-    true_STATVAL    = single([]);
-    true_MM         = single([]);
-    true_P          = single([]);
-    delete(gcp('nocreate'));
-    obj_pool    = parpool(4);
-    parfor i_pos=1:size(DATA,1),     
-        %tic
-        t_data                  = (DATA(i_pos,:))';
-        [~,tab,~]               = do_test(t_data,t_design);
-        true_MM(i_pos,:)        = do_margmean(t_data,t_design);    
-        true_STATVAL(i_pos,:)   = [tab{2:5,6}];
-        true_P(i_pos,:)         = [tab{2:5,7}];
-        %utils.toc_to_estimate(toc,data_dim(1));    
-    end
-    delete(obj_pool);
-    save([lcl_folder,'map_true_stats.mat'],'true_MM','true_STATVAL','true_P');
-else
-    load([lcl_folder,'map_true_stats.mat'],'true_MM','true_STATVAL','true_P');
+true_STATVAL    = single([]);
+true_P          = single([]);
+true_M          = single([]);
+for i_pos=1:size(DATA,1),     
+    t_data                  = (DATA(i_pos,:))';
+    [~,tab,stats]           = do_test(t_data,DESIGN_MATRIX);
+    true_STATVAL(i_pos,:)   = [tab{PICK_K,6}];
+    true_P(i_pos,:)         = [tab{PICK_K,7}];    
+    [~,m,~,~]               = multcompare(stats,'dim',[1,2],'display','off');
+    true_M                  = cat(2,true_M,m(:,1));
 end
-
+true_M = true_M';
 
 %%
 if ~flag_nonparametric, 
@@ -59,11 +47,11 @@ end
 % CONSTRUCTION OF THE PERMUTATION ARRAY
 % Output: A cell array containing for each stimulation intensity a matrix for later design matrix permutation 
 PERM        = int8([]);
-u_sub       = unique(SUB);
-for rep=1:num_rep, 
+u_sub       = unique(SUBID);
+for rep=1:NUM_REP, 
     perm_set    = [];
     for i_sub=1:length(u_sub)
-        sub_GetPut  = find(SUB==u_sub(i_sub));        
+        sub_GetPut  = find(SUBID==u_sub(i_sub));        
         perm_set    = cat(1,perm_set,sub_GetPut(randperm(length(sub_GetPut)),:));
     end
     PERM(:,rep) = perm_set;
@@ -74,7 +62,7 @@ end
 BOT         = int8([]);
 dec_design  = bin2dec(num2str(DESIGN))+1;
 u_dsg       = unique(dec_design);
-for rep=1:num_rep, 
+for rep=1:NUM_REP, 
     bot_set    = [];
     for i_dsg=1:length(u_dsg)
         dsg_GetPut  = dec_design==u_dsg(i_dsg);
@@ -90,79 +78,60 @@ clear u_dsg i_dsg rep i_sub dsg_GetPut sub_GetPut perm_set bot_set dec_design u_
 % PERFORMING PERMUTATION ANALYSIS
 % Output: perm_VAL(repetition,intensity,factor)
 % analysis function based on earlier anonymous definition
-
-if ~exist([lcl_folder,'map_perm_stats.mat'],'file')
-    t_design        = cat(2,DESIGN,SUB);
-    modelOrder      = int8(size(DEF_MODEL,1));
-    tab_sel         = 2:modelOrder+1;
-    perm_P          = ones(size(DATA,1),modelOrder);
-    parfor i_pos=1:size(DATA,1),
-        perm_STATVAL = zeros(1,4);
-        for rep=1:num_rep,                      
-            t_data                  = (DATA(i_pos,PERM(:,rep)));            
-            [~,tab,~]               = do_test(t_data,t_design);            
-            tmp                     = (true_STATVAL(i_pos,:,:) >= [tab{tab_sel,6}]);      
-            perm_STATVAL            = perm_STATVAL+tmp;
-        end
-        perm_P(i_pos,:) = (perm_STATVAL./(num_rep+1));        
+perm_P          = ones(size(DATA,1),length(PICK_K));
+for i_pos=1:size(DATA,1),
+    perm_STATVAL = [];
+    utils.progressBar('0');
+    for rep=1:NUM_REP,         
+        utils.progressBar(rep);
+        t_data                  = (DATA(i_pos,PERM(:,rep)));            
+        [~,tab,~]               = do_test(t_data,DESIGN_MATRIX);                
+        perm_STATVAL            = cat(1,perm_STATVAL,[tab{PICK_K,6}]);
     end
-    delete(obj_pool);
-    save([lcl_folder,'map_perm_stats.mat'],'perm_P')
-else
-    load([lcl_folder,'map_perm_stats.mat'],'perm_P')
+    utils.progressBar('1');
+    tmpP            = mean(repmat(true_STATVAL(i_pos,:),NUM_REP,1)>=perm_STATVAL);
+    perm_P(i_pos,:) = tmpP;
 end
-
-
-% PERFORMING PERMUTATION ANALYSIS
-% Output: perm_VAL(repetition,intensity,factor)
-% analysis function based on earlier anonymous definition
-perm_VAL = [];
-for si=1:7,
-    t_sel               = subAverage.Design(:,end)==si;
-    t_design            = subAverage.Design(t_sel,1:4);        
-    for rep=1:num_rep,
-        t_idx               = PERM{si}(:,rep);
-        t_values            = DATA(t_idx);                         
-        [p,tab,stats]       = do_test(t_values,t_design);
-        perm_VAL(rep,si,:)  = [tab{2:5,6}];
-    end   
-end
-
-% ESTIMATION OF P-VALUE
-% Output: A matrix containing for each stimulation intensity the p-value of
-% a two-sided hypothesis test
-P = [];
-for si=1:7,
-    matrix_P    = repmat(true_VAL(si,:),num_rep,1)>=squeeze(perm_VAL(:,si,:));
-    t_p         = mean(matrix_P);
-    t_p         = min(t_p,1-t_p).*2;
-    P(si,:)     = t_p;
-end
-
 %% ------------------------------------------------------------------------
 % BOOTSTRAP ANALYSIS 
 %
 % PERFORMING
 % Output: bot_VAL(repetition,intensity,level,factor) values are the 
 % bootstrapped marginal average for each level (true,false) of each factor
-bot_M = [];
-for si=1:7,
-    for rep=1:num_rep,
-        t_idx               = BOT{si}(:,rep);
-        t_values            = DATA(t_idx);   
-        t_design            = subAverage.Design(t_idx,1:4);
-        
-        m                   = (grpstats(t_values,t_design(:,1:3)));
-        marginal_m          = cat(2,grpstats(m,setup.IO.BI),grpstats(m,setup.IO.LM),grpstats(m,setup.IO.M1));   
- 
-        bot_M(rep,si,:,:) = marginal_m;
-    end   
-end
 
-% ESTIMATION OF DESCRIPTIVE PARAMETERS
-% Output: A matrix containing for each intensity the bootstrapped upper 
-% and lower  95% CI for each factor and level 
-% (CiLow,CiUp,StimulationIntensity,Level,Factor)
-bot_CI          = cat(1,quantile(bot_M,0.025,1),quantile(bot_M,0.975,1));
-bot_DELTA       = squeeze(diff(bot_M,[],3));
-bot_D           = squeeze(cat(1,quantile(bot_DELTA,0.025,1),quantile(bot_DELTA,0.975,1)));
+bot_CI = NaN(size(DATA,1),length(PICK_K),2);
+bot_P  = NaN(size(DATA,1),length(PICK_K),NUM_REP);
+for i_pos=1:size(DATA,1),
+    tmp_M = [];
+    tmp_P = [];        
+    utils.progressBar('0');
+    for rep=1:NUM_REP,         
+        utils.progressBar(rep);
+        t_data                  = (DATA(i_pos,BOT(:,rep)));            
+        [p,~,stats]             = do_test(t_data,DESIGN_MATRIX);                
+        [~,m,~,~]               = multcompare(stats,'dim',[1,2],'display','off');
+        tmp_M                   = cat(2,tmp_M,m(:,1));
+        tmp_P                   = cat(2,tmp_P,p);        
+    end
+    utils.progressBar('1');
+    bot_P(i_pos,:,:)    = tmp_P;    
+    bot_CI(i_pos,:,:)   = cat(2,quantile(tmp_M,0.025,2),quantile(tmp_M,0.975,2));
+  
+end
+% 
+% ALPHA_VAL       = 0.05;
+% D               = (pdist2(utils.get_DesignGrid,utils.get_DesignGrid));
+% Adjacency       = D<6;        
+% for k=1:size(bot_P,2)
+%     for rep=1:num_rep,      
+%         SigVal          = (bot_P(:,k,rep))<=ALPHA_VAL;
+%         SigMat          = (double(SigVal)*double(SigVal)');
+%         
+%         
+%         
+%         [r,c]           = find(SigMat),
+%         Z               = zeros(size(Adjacency)); 
+%         Z(r(r~=c),c(c~=r)) = true;
+%         
+%     end
+% end

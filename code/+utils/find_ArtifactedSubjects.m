@@ -1,4 +1,4 @@
-function IsArtifacted = check_artifacts(lcl_folder,D)
+function IsArtifacted = find_ArtifactedSubjects(lcl_folder,D)
 % @param lcl_folder is the folder where datasets are stored (obligatory)
 % @param D is the files in the lcl_folder (facultativ)
 % @return IsArtifacted, a logical vector with [1] indicating artifacts

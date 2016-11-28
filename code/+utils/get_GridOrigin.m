@@ -1,3 +1,3 @@
-function grid_origin = get_GridOrigin(sub)
-    grid_origin  = mean(sub.xyz);
+function grid_origin = get_GridOrigin(mapping)
+    grid_origin  = mean(mapping.xyz(1:315,:));
 end
