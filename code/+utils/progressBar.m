@@ -1,6 +1,8 @@
-function progressBar(current_rep)
+function progressBar(current_rep,MOD_CONSTANT)
+
 TrailArray      = {'-','\','|','/','-','\','|','/'};
-MOD_CONSTANT    = 10;
+
+if nargin<2,  MOD_CONSTANT    = 10; end
 
 
 if ischar(current_rep)
@@ -13,23 +15,28 @@ if ischar(current_rep)
         fprintf('\b%s','.')   
         fprintf('%s\n',']')       
     else
-        warning('Error, Use "0" and "1" to mark Start and End');
+        fprintf('%s',current_rep)   
+        %warning('Error, Use "0" and "1" to mark Start and End');
     end
     
     return
 end    
 
-% Running
-if ~(mod(current_rep,MOD_CONSTANT)),          
-    tl = mod(int32(current_rep/MOD_CONSTANT),length(TrailArray))+1;        
-    if tl==1,
-        fprintf('\b%s','.')            
-        fprintf('%s',TrailArray{tl});
+% Running Index
+if isnumeric(current_rep)
+    if ~(mod(current_rep,MOD_CONSTANT)),          
+        tl = mod(int32(current_rep/MOD_CONSTANT),length(TrailArray)+1)+1;        
+        pause(1)
+        if tl>length(TrailArray),
+            fprintf('\b%s','.')                        
+        elseif tl==1,
+            fprintf('%s',TrailArray{tl});
+        else
+            fprintf('\b%s',TrailArray{tl});
+        end  
     else
-        fprintf('\b%s',TrailArray{tl});
-    end  
-else
-    return;
+        return;
+    end
 end
 
 end

@@ -61,9 +61,7 @@ end
 % @returns Vout, the avreaged and repaired values ordered according to xyz
 function Vout = fix_on_Grid(mapping,field)
 
-remove_flag                 = utils.find_artifactedTrials(mapping);
 eval(['rawV = mapping.',field,';']);
-rawV(remove_flag) = NaN;
 V       = squeeze(nanmean(reshape(rawV,3,15,7),1));
 V       = fix_NaN(V);
 Vout    = reshape(flipEven(V),1,[])';
