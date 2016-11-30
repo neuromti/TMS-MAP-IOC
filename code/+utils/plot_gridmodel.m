@@ -19,26 +19,22 @@ absTriValue(absTriValue>CLIM)   = CLIM;
 BV                              = (absTriValue.*sgnTriValue)./CLIM;
 
 % Interpolate
-Xq          = linspace(min(Grid(:,1)),max(Grid(:,1)),150);
-Yq          = linspace(min(Grid(:,2)),max(Grid(:,2)),70);
+Xq          = linspace(min(Grid(:,1)),max(Grid(:,1)),14);
+Yq          = min(Grid(:,2)):mean(diff(Xq)):max(Grid(:,2));
+
 [Xq,Yq]     = meshgrid(Xq,Yq);
-%BV          = interp2(X,Y,BV,Xq,Yq,'nearest');
-%V           = interp2(X,Y,V,Xq,Yq,'nearest');
-BV          = interp2(X,Y,BV,Xq,Yq,'cubic');
-V           = interp2(X,Y,V,Xq,Yq,'cubic');
+iBV         = interp2(X,Y,BV,Xq,Yq,'linear');
+iV          = interp2(X,Y,V,Xq,Yq,'linear');
 X           = Xq;
 Y           = Yq;
 
 % Plotting data
 figure
 hold on
-h_c = contour(X,Y,BV,linspace(-CLIM,CLIM,40),'fill','on');
-if any(any(abs(V)>1.30))   
-    PV = double(abs(V)<1.301);
-    h_s = contour(X,Y,PV,[0 .99],'fill','off','linecolor',[.5 .5 .5],'linewidth',2);        
+h_c = contour(X,Y,iBV,linspace(-CLIM,CLIM,40),'fill','on');
+if any(any(abs(iV)>1.30))       
+    h_s = contour(X,Y,abs(iV),[0 1.301],'fill','off','linecolor',[.5 .5 .5],'linewidth',2);        
 end
-
-
 
 caxis([-CLIM CLIM])
 xlabel('X-Axis in mm')
@@ -53,7 +49,6 @@ set(hnd_cb,'YLIM',[-CLIM CLIM],'YTICK',ytick,'YTICKLABEL',yticklab)
 hold on
 xyz     = utils.get_DesignGridOrigin+[0,-10,0];
 plot3(xyz(:,1),xyz(:,2),xyz(:,3),'ko','markerfacecolor','r')
-
 
 end
 
