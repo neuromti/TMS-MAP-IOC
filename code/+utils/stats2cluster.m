@@ -1,19 +1,34 @@
-function [ClusVal,GridIdx] = stats2cluster(Hgrid,Sgrid)
+function [ClusVal,GridIdx,ClusSize] = stats2cluster(Hgrid,Sgrid)
 
-[B,GridIdx,N,~]   = bwboundaries(Hgrid,'noholes');
-ClusVal     = [];
-%ClusSize    = [];
-if ~isempty(B),
-    for i_clus = 1:N,
-        ClusVal     = [ClusVal,sum(Sgrid(GridIdx==i_clus))];
-    %    ClusSize    = [ClusSize,sum(sum(GridIdx==i_clus))];
+posH                = Hgrid&(Sgrid>0);
+negH                = Hgrid&(Sgrid<0);   
+[PosClusVal,PosGridIdx,PosClusSize] = calc_cluster(posH,Sgrid);
+[NegClusVal,NegGridIdx,NegClusSize] = calc_cluster(negH,Sgrid);
+
+ClusVal     = [PosClusVal,NegClusVal];
+ClusSize    = [PosClusSize,NegClusSize];
+GridIdx     = cat(3,PosGridIdx,NegGridIdx);
+
+end
+
+function [ClusVal,GridIdx,ClusSize] = calc_cluster(H,S)
+    [B,GridIdx,N,~]   = bwboundaries(H,'noholes');
+    GridIdx     = int8(GridIdx);
+    ClusVal     = single([]);
+    ClusSize    = single([]);
+    if ~isempty(B),
+        for i_clus = 1:N,
+            ClusVal     = [ClusVal,sum(S(GridIdx==i_clus))];
+            ClusSize    = [ClusSize,sum(sum(GridIdx==i_clus))];
+        end
+
+        [~,sort_idx]    = sort(abs(ClusVal),'descend');
+        ClusVal         = ClusVal(sort_idx);
+        ClusSize        = ClusSize(sort_idx);
+
+    else
+        ClusVal     = [];
+        ClusSize    = [];
     end
 
-    ClusVal     = sort(ClusVal,'descend');
-  %  ClusSize    = sort(ClusSize,'descend');
-
-else
-    ClusVal     = [];
-   % ClusSize    = [];
-end
 end
