@@ -47,7 +47,7 @@ for idx_dataset = 1:length(D),
     fprintf(logfileid,'At %s finished dataset %i \n',datetime('now'),idx_dataset);
     utils.progressBar('.')
 end
-utils.progressBar(']')
+utils.progressBar('1')
 fclose(logfileid);
 clear logfileid;
 save([folder.results.stats,'map_subject_data.mat'],'SUB')
@@ -78,14 +78,13 @@ DataList = {'quad_AMP'    'quad_MEP'    'quad_LAT'    'th_AMP'    'th_MEP'    't
 FieldList = fieldnames(GRD);
 
 for i_f = 1:length(FieldList)
-    
+    disp([FieldLabel{find(ismember({'AMP','MEP','LAT'},DataList{i_f}(end-2:end)))},' ',WeightLabel{find(ismember({'qu','th'},DataList{i_f}(1:2)))},': Statistics Started'])
     eval(['DATA = cat(3,GRD(sort_idx).',FieldList{i_f},');']);
     tic
     [TestResults,ClusterResults] = utils.mappingdata2statistics(DATA,SUBID,DESIGN);     
     toc
     if ~exist([folder.results.stats,'\',FieldList{i_f},'\'],'dir'),mkdir([folder.results.stats,'\',FieldList{i_f},'\']); end
-    save([folder.results.stats,'\',FieldList{i_f},'\stats.mat'],'TestResults','ClusterResults');        
-    
+    save([folder.results.stats,'\',FieldList{i_f},'\stats.mat'],'TestResults','ClusterResults');            
     notify_me([FieldLabel{find(ismember({'AMP','MEP','LAT'},DataList{i_f}(end-2:end)))},' ',WeightLabel{find(ismember({'qu','th'},DataList{i_f}(1:2)))},'Statistics Finished'],'Grid Interpolation');
 end
 %%
@@ -101,7 +100,7 @@ for i_d = 1:length(DataList)
         PlotLabel   = [TitleLab,' ',anno_label{k}];
 
         %P           = -log10(TestResults.Pval(:,k));
-        P           = -log10(TestResults.PermutationPval(:,k));
+        P           = -log10(TestResults.PermutationPval(:,k)+eps);
         S           = sign(TestResults.Coeffs(:,k));
         V           = P.*S;
         

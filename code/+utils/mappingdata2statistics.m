@@ -5,7 +5,7 @@ function [TestResults,ClusterResults] = mappingdata2statistics(DATA,SUBID,DESIGN
 
 ALPHA_ERROR         = 0.05;
 DESIGN_MATRIX       = cat(2,DESIGN,SUBID);
-NUM_REP             = 100;
+NUM_REP             = 1000;
 disp(['Alpha Error: ',num2str(ALPHA_ERROR)])
 disp(['Number of Repetitions ',num2str(NUM_REP)])
 %% ------------------------------------------------------------------------
@@ -92,50 +92,42 @@ TestResults.CoeffsCI    = single(Boot_CoeffsCI);
 
 for k=1:length(ClusterResults)
     TestClusterNum                      = length(ClusterResults(k).Sval);    
-    if TestClusterNum>0
-        SigCounts       = true(NUM_REP,TestClusterNum);        
+    
+    if TestClusterNum==0,    
+        ClusterResults(k).Perm_Pval = [];
+        continue; 
+    end            
+    
+    if TestClusterNum>0  
+        
+        [AbsTestClusterVal,WhichTestClus]   = sort(abs(ClusterResults(k).Sval),'descend');   
+        [~,PutBackInOrder]                  = sort(WhichTestClus,'ascend');
+        SigCounts                           = true(NUM_REP,TestClusterNum);
+        
         for rep=1:NUM_REP,        
             Hgrid               = utils.vec2mesh(Perm_Pval(:,k,rep)<ALPHA_ERROR);
             Sgrid               = utils.vec2mesh(Perm_Sval(:,k,rep));
             ClusVal             = utils.stats2cluster(Hgrid,Sgrid);
-                        
-            AbsPermClusterVal                   = sort(abs(ClusVal));                        
-            [AbsTestClusterVal,WhichTestClus]   = sort(abs(ClusterResults(k).Sval),'descend');
-            IsSignificantbyChance               = false(1,TestClusterNum);    
-            
-            while ~isempty(WhichTestClus), 
-                %As long as at least one TestCluster remains to be tested,                
-                if isempty(AbsPermClusterVal), 
-                % No PermClusters found or remaining? The remaining
-                % TestClusters can therefore not become significant from H0                
-                    IsSignificantbyChance(WhichTestClus) = false;
-                    break;
-                end
-                
-                % Contrast remaining strongest TestCluster with strongest remaining PermCluster
-                IsSignificantbyChance(WhichTestClus(1)) = AbsPermClusterVal(1)>=AbsTestClusterVal(1);
 
-                if ~IsSignificantbyChance(WhichTestClus(1))
-                % And remove him and its contestor, if the TestCluster was superior 
-                    WhichTestClus(1)        = [];
-                    AbsTestClusterVal(1)    = [];
-                    AbsPermClusterVal(1)    = [];                    
-                end
-                
-            end                        
+            if isempty(ClusVal),
+                IsSignificantbyChance   = false(1,TestClusterNum);
+                SigCounts(rep,:)        = IsSignificantbyChance;  
+                continue; 
+            end
             
-            SigCounts(rep,:)    = IsSignificantbyChance;                   
-        end    
-        ClusterPermPval = (sum(SigCounts)./(NUM_REP+1));
-    else
-        ClusterPermPval = [];
-    end
+            AbsPermClusterVal   = sort(abs(ClusVal));                        
+            
+            for PickTestCluster=1:TestClusterNum
+                IsSignificantbyChance(PickTestCluster) = AbsPermClusterVal(1)>AbsTestClusterVal(PickTestCluster);
+            end
+            SigCounts(rep,:)    = IsSignificantbyChance(PutBackInOrder);              
+        end               
+        tmpPval         = sum(SigCounts)./(NUM_REP);
+        ClusterPermPval = max(tmpPval,1/NUM_REP);   
+    end    
     
-    ClusterResults(k).Perm_Pval = single(ClusterPermPval);
 end
-
-
-
+   
 end
 %% LOCAL FUNCTIONS
 % ANALYSIS FUNCTION 
@@ -208,6 +200,7 @@ end
 function P = perm2pval(TrueSval,RandomSval)
     TrueMat     = repmat(TrueSval,size(RandomSval,2),1);
     numSig      = sum(RandomSval'>=TrueMat);
-    divideBy    = (size(RandomSval,2)+1);
+    divideBy    = (size(RandomSval,2));
     P           = single(numSig./divideBy);
+    P           = max(P,1/divideBy); 
 end
