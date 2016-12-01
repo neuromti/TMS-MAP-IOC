@@ -69,7 +69,8 @@ for idx_put=1:length(setup.SUB.id),
 end
 %%
 % Define the query grid based on surface mesh-grid 
-sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_white_left.mat');
+%sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_white_left.mat');
+sfc                 = load('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip\template\anatomy\surface_pial_left.mat');
 clear headmodel
 headmodel.pos         = single(sfc.bnd.pnt);
 headmodel.tri         = single(sfc.bnd.tri);
@@ -82,7 +83,16 @@ clear sfc
 gridmodel.resolution                    = [50,100,1];
 [gridmodel.X,gridmodel.Y,gridmodel.Z]   = (meshgrid(linspace(-25,25,gridmodel.resolution(1)),linspace(-50,50,gridmodel.resolution(2)),linspace(0,0,gridmodel.resolution(3))));
 gridmodel.pos                           = single(cat(2,reshape(gridmodel.X,[],1),reshape(gridmodel.Y,[],1),reshape(gridmodel.Z,[],1)));
-
+%% Define Labels and Titles for Plotting
+Label.Title     = {[setup.MAP.label.BI{1},' > ',setup.MAP.label.BI{2}]...
+            [setup.MAP.label.LM{1},' > ',setup.MAP.label.LM{2}],...
+            [setup.MAP.label.BI{1},' ',setup.MAP.label.LM{1},' & ',setup.MAP.label.BI{2},' ',setup.MAP.label.LM{2}],...
+            };
+       
+Label.Save      =  {'Waveform', 'Orientation', 'W-O-Interaction'};
+Label.Field     = {'Amplitude','MEP','Latency'};
+Label.Weight    = {'Quadratic','Spherical'};   
+Label.Dataset   = {'quad_AMP'    'quad_MEP'    'quad_LAT'    'th_AMP'    'th_MEP'    'th_LAT'};
 
 %%
-save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder')
+save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder','Label')

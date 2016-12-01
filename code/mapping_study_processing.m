@@ -1,14 +1,8 @@
 %% Configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
+cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
-
-addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
-cmap        = linear_kry_5_95_c72_n256;
-set(groot,'DefaultFigureColormap',cmap)
-
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder');
-
 %% Loading data
 % List the .mat files int the data directory
 D           = dir([folder.data.map,'\*.mat']);
@@ -16,9 +10,7 @@ D           = dir([folder.data.map,'\*.mat']);
 % Find artifacted datasets 
 IsArtifacted        = utils.find_ArtifactedSubjects(folder.data.map);
 D(IsArtifacted)     = [];
-%%
-clc
-clear SUB GRD
+
 logfilename = [folder.code,'Logfile.log'];
 logfileid   = fopen(logfilename,'wt');
 fprintf(logfileid,'started script on %s \n',datetime('now'));
@@ -50,69 +42,121 @@ end
 utils.progressBar('1')
 fclose(logfileid);
 clear logfileid;
+
+% Sort data according to subject ID
+[~,sort_idx]    = sort(cat(1,SUB.subID));
+SUB = SUB(sort_idx);
+GRD = GRD(sort_idx);
+
+% Save the processed data
 save([folder.results.stats,'map_subject_data.mat'],'SUB')
 save([folder.results.stats,'map_gridded.mat'],'GRD')
-%%
+%% STATISTICAL ANALYSIS
 % GROUP PARAMETERS
+clc, clear, close all
+load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder','Label');
 load([folder.results.stats,'map_subject_data.mat'],'SUB')
 load([folder.results.stats,'map_gridded.mat'],'GRD')
 
-SUBID   = cat(1,SUB.subID);
-[~,sort_idx] = sort(SUBID);
-DESIGN      = cat(1,SUB(sort_idx).DesignMatrix);
-SUBID       = SUBID(sort_idx);
+DESIGN          = cat(1,SUB.DesignMatrix);
+SUBID           = cat(1,SUB.subID);
 
-cmap                        = diverging_bwr_40_95_c42_n256;
-%cmap                        = calc_colormap(2,1.3/2,'white',256);
-%cmap                        = calc_colormap(2,0,'white',24);
-set(groot,'DefaultFigureColormap',cmap)
-anno_label = {[setup.MAP.label.BI{1},' > ',setup.MAP.label.BI{2}]...
-            [setup.MAP.label.LM{1},' > ',setup.MAP.label.LM{2}],...
-            [setup.MAP.label.BI{1},' ',setup.MAP.label.LM{1},' & ',setup.MAP.label.BI{2},' ',setup.MAP.label.LM{2}],...
-            };
-        
-SaveLabel  =  {'Waveform', 'Orientation', 'W-O-Interaction'};
-FieldLabel = {'Amplitude','MEP','Latency'};
-WeightLabel = {'Quadratic','Spherical'};   
-DataList = {'quad_AMP'    'quad_MEP'    'quad_LAT'    'th_AMP'    'th_MEP'    'th_LAT'};
-FieldList = fieldnames(GRD);
-
-for i_f = 1:length(FieldList)
-    disp([FieldLabel{find(ismember({'AMP','MEP','LAT'},DataList{i_f}(end-2:end)))},' ',WeightLabel{find(ismember({'qu','th'},DataList{i_f}(1:2)))},': Statistics Started'])
-    eval(['DATA = cat(3,GRD(sort_idx).',FieldList{i_f},');']);
-    tic
-    [TestResults,ClusterResults] = utils.mappingdata2statistics(DATA,SUBID,DESIGN);     
-    toc
-    if ~exist([folder.results.stats,'\',FieldList{i_f},'\'],'dir'),mkdir([folder.results.stats,'\',FieldList{i_f},'\']); end
-    save([folder.results.stats,'\',FieldList{i_f},'\stats.mat'],'TestResults','ClusterResults');            
-    notify_me([FieldLabel{find(ismember({'AMP','MEP','LAT'},DataList{i_f}(end-2:end)))},' ',WeightLabel{find(ismember({'qu','th'},DataList{i_f}(1:2)))},'Statistics Finished'],'Grid Interpolation');
-end
-%%
-clc
-for i_d = 1:length(DataList)
-    load([folder.results.stats,'\',FieldList{i_d},'\stats.mat']);            
-    i_f = find(ismember({'AMP','MEP','LAT'},DataList{i_d}(end-2:end)));
-    i_w = find(ismember({'qu','th'},DataList{i_d}(1:2)));
-    TitleLab = FieldLabel{i_f};
+for i_d = 1:length(Label.Dataset)
+    % Where to save the files
+    savefile                    = [folder.results.stats,Label.Dataset{i_d},'\stats.mat'];
+    [savepath,filename,filext]  = fileparts(savefile);
     
-    for k=1:length(anno_label),
+    % Initalize for Logging
+    log_betreff   = [Label.Field{(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)))},' ',Label.Weight{(ismember({'qu','th'},Label.Dataset{i_d}(1:2)))},': Statistics '];
+    
+    if ~exist (savefile,'file'), %check whether already processed before 
+        betreff = [log_betreff,'Started'];
+        disp(betreff)
+        eval(['DATA = cat(2,GRD.',Label.Dataset{i_d},');']);
         
-        PlotLabel   = [TitleLab,' ',anno_label{k}];
+        A = datetime('now');
+        [TestResults,ClusterResults] = utils.mappingdata2statistics(DATA,SUBID,DESIGN);     
+        O = datetime('now')-A;
+        O = sprintf('It ran for %.1g years %.1g months %.1g days %.1g hours %.2g minutes %.2g seconds',datevec(O));
+        if ~exist(savepath,'dir'), mkdir(savepath); end
+        save(savefile,'TestResults','ClusterResults');   
+        
+        betreff = [log_betreff,'Finished'];
+        notify_me(betreff,O);
+    else
+        betreff = [log_betreff,'already analyzed'];
+        notify_me(betreff,'');
 
-        %P           = -log10(TestResults.Pval(:,k));
-        P           = -log10(TestResults.PermutationPval(:,k)+eps);
+    end
+end
+%% VISUALIZATION
+addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
+cmap = diverging_bwr_40_95_c42_n256;
+set(groot,'DefaultFigureColormap',cmap)
+clc
+
+% Show Effects of Factors on the different measures on the grid 
+% and project them on a headmodel
+
+for i_d = 1:length(Label.Dataset)
+    load([folder.results.stats,'\',Label.Dataset{i_d},'\stats.mat']);            
+    i_field     = find(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)));
+    i_weight    = find(ismember({'qu','th'},Label.Dataset{i_d}(1:2)));
+  
+    close all
+    delete([folder.results.figs,Label.Weight{i_w},'\*.tif'])
+    for k=1:size(TestResults.Pval,2)
+        
+
+        PlotLabel   = [Label.Field{i_field},' ',Label.Weight{i_weight},' ',Label.Title{k}];
+        
+        % P           = -log10(TestResults.Pval(:,k));
+        
+        P           = -log10(TestResults.PermutationPval(:,k));
         S           = sign(TestResults.Coeffs(:,k));
         V           = P.*S;
         
         utils.plot_gridmodel(V,2)
-        title(PlotLabel)             
-        print(gcf,[folder.results.figs,WeightLabel{i_w},'\GRID_',SaveLabel{k},'-',TitleLab,'.tif'],'-dtiff')
-        
+        title(Label.Title{k})             
+        print(gcf,[folder.results.figs,Label.Weight{i_w},'\GRID_',Label.Save{k},'-',Label.Field{i_field},'.tif'],'-dtiff')        
         
         utils.plot_headmodel(headmodel,V,2)
         annotation('textbox','Position',[0 0 1 1],'String',PlotLabel)
-        print(gcf,[folder.results.figs,WeightLabel{i_w},'\HEAD_',SaveLabel{k},'-',TitleLab,'.tif'],'-dtiff')
-        close all
+        print(gcf,[folder.results.figs,Label.Weight{i_w},'\HEAD_',Label.Save{k},'-',Label.Field{i_field},'.tif'],'-dtiff')
+
+        
+        for clus_idx = 1:length(ClusterResults(k).PermPval),
+            Grid    = utils.get_DesignGrid;
+            sel     = utils.mesh2vec(ClusterResults(k).MemberShip(:,:,1)==clus_idx);
+            xyz     = double(Grid(sel,:));
+            V       = utils.Target2Grid(xyz);
+
+            %utils.plot_headmodel(headmodel,V,1)
+
+            utils.plot_gridmodel(V,2)
+            title(PlotLabel)             
+            colorbar off
+            print(gcf,[folder.results.figs,Label.Weight{i_w},'\GRID_',Label.Save{k},'-',Label.Field{i_field},'-Cluster_',num2str(clus_idx),'.tif'],'-dtiff')
+            
+            utils.plot_headmodel(headmodel,V,2)
+            annotation('textbox','Position',[0 0 1 1],'String',PlotLabel)
+            print(gcf,[folder.results.figs,Label.Weight{i_w},'\HEAD_',Label.Save{k},'-',Label.Field{i_field},'-Cluster_',num2str(clus_idx),'.tif'],'-dtiff')
+            
+        end                
     end
-       
+    
+    
 end
+
+% Plot Position of Anterior Target
+close all
+ANT         = utils.get_GroupAnt(SUB);
+V           = utils.Target2Grid(ANT);
+utils.plot_headmodel(headmodel,V,1)
+annotation('textbox','Position',[0 0 1 1],'String','Distribution of Anterior Target')
+print(gcf,[folder.results.figs,'\HEAD_PDF_Anterior_Target.tif'],'-dtiff')
+
+utils.plot_gridmodel(V,2)
+title('Distribution of Anterior Target')
+print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target.tif'],'-dtiff')
+%

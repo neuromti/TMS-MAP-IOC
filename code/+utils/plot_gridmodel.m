@@ -47,9 +47,11 @@ set(hnd_cb,'YLIM',[-CLIM CLIM],'YTICK',ytick,'YTICKLABEL',yticklab)
 
 % Plot Position of HotSpot according to Design (1 cm posterior to Grid Origin
 hold on
-xyz     = utils.get_DesignGridOrigin+[0,-10,0];
-plot3(xyz(:,1),xyz(:,2),xyz(:,3),'ko','markerfacecolor','r')
+HS          = utils.get_DesignGridOrigin+[0,-10,0];
+plot3(HS(:,1),HS(:,2),HS(:,3),'ko','markerfacecolor','r')
 
+ANT         = utils.get_GroupAnt();
+plot3(ANT(:,1),ANT(:,2),ANT(:,3),'ko','markerfacecolor','b')
 end
 
 function [ytick,yticklab] = make_yticks(CLIM)
@@ -60,5 +62,3 @@ function [ytick,yticklab] = make_yticks(CLIM)
         yticklab{i_yt} = sprintf('%.3g ',10^-abs(ytick(i_yt)));
     end
 end
-
-
