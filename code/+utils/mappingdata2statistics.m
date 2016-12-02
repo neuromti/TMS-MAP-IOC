@@ -113,8 +113,7 @@ for k=1:length(ClusterResults)
     
     if TestClusterNum>0  
         
-        [AbsTestClusterVal,WhichTestClus]   = sort(abs(ClusterResults(k).Sval),'descend');   
-        [~,PutBackInOrder]                  = sort(WhichTestClus,'ascend');
+        [AbsTestClusterVal]                 = abs(ClusterResults(k).Sval);        
         SigCounts                           = true(NUM_REP,TestClusterNum);
             
         utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    

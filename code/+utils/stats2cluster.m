@@ -21,11 +21,6 @@ function [ClusVal,GridIdx,ClusSize] = calc_cluster(H,S)
             ClusVal     = [ClusVal,sum(S(GridIdx==i_clus))];
             ClusSize    = [ClusSize,sum(sum(GridIdx==i_clus))];
         end
-
-        [~,sort_idx]    = sort(abs(ClusVal),'descend');
-        ClusVal         = ClusVal(sort_idx);
-        ClusSize        = ClusSize(sort_idx);
-
     else
         ClusVal     = [];
         ClusSize    = [];
