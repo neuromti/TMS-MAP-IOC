@@ -1,11 +1,6 @@
 function sub = intialize_dataset(filename,setup)
 
-t.s                     = regexp(filename,'S\w*');
-t.c                     = regexp(filename,'C\w*');
-t.d                     = regexp(filename,'.mat');
-t.data_sub              = int32(str2double(filename(t.s+1:t.c-1)));
-t.data_cond             = int32(str2double(filename(t.c+1:t.d-1)));
-t.subID                 = find(setup.SUB.id==t.data_sub);    
+t                           = utils.scan_DataFileName(filename,setup);
 
 % Transfer temporary into sub
 sub                         = struct();

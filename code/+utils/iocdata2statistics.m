@@ -1,112 +1,131 @@
-function [TestResults,ClusterResults] = mappingdata2statistics(DATA,SUBID,DESIGN)
+function [TestResults,ClusterResults] = iocdata2statistics(DATA,DESIGN,SUBID,STIM,PERM_flag,BOT_flag)
 %% -------------------------------------------------------------------------
 % DEFINITION OF PARAMETERS
 % -------------------------------------------------------------------------
 ALPHA_ERROR         = utils.get_ALPHAERROR();
 DESIGN_MATRIX       = cat(2,DESIGN,SUBID);
 NUM_REP             = 1000;
+NUM_STIM            = 7;
 disp(['Alpha Error: ',num2str(ALPHA_ERROR)])
 disp(['Number of Repetitions ',num2str(NUM_REP)])
 
 % Flags for structured code testing 
-PERM_flag   = true;
-BOOT_flag   = true;
-CLUS_flag   = true;
+if nargin <5,
+    PERM_flag   = true;
+    BOT_flag   = true;
+end
+if nargout >1 && PERM_flag
+    CLUS_flag   = true;
+else
+    CLUS_flag   = false;
+end
+
 %% ------------------------------------------------------------------------
 % PERFORMING TRUE ANALYSIS
 % -------------------------------------------------------------------------
 
-for i_pos=1:size(DATA,1),     
-    PositionData                    = (DATA(i_pos,:))';
-    [Pval,StatVal,MargMeans,Coeffs] = get_StatisticalValues(PositionData,DESIGN_MATRIX);       
-    Test(i_pos).Pval                = Pval;        
-    Test(i_pos).Sval                = StatVal;
-    Test(i_pos).Coeffs              = Coeffs';
-    Test(i_pos).MargMeans           = MargMeans;
+for i_stim=1:NUM_STIM
+    StimData                        = DATA(STIM==i_stim,:);
+    StimDesign                      = DESIGN_MATRIX(STIM==i_stim,:);
+    [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(StimData,StimDesign);       
+    Test(i_stim).Pval               = Pval;        
+    Test(i_stim).Sval               = StatVal;
+    Test(i_stim).Coeffs             = Coeffs';    
+    Test(i_stim).MargMeans          = MargMeans;    
 end
 
 Test_Pval   = cat(1,Test.Pval);
 Test_Sval   = cat(1,Test.Sval);
 Test_Coeffs = cat(1,Test.Coeffs);
-Test_MargMeans = cat(2,Test.MargMeans);
-
-for k=1:size(Test_Sval,2),    
-    Hgrid                       = utils.vec2mesh((Test_Pval(:,k)<ALPHA_ERROR));
-    Sgrid                       = utils.vec2mesh(Test_Sval(:,k));    
-    [ClusVal,GridIdx,ClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
-    Test_ClusVal{k}             = ClusVal;
-    Test_ClusSize{k}            = ClusSize;
-    Test_ClusIdx{k}             = GridIdx;
-end
-       
+Test_MargMeans = cat(2,Test.MargMeans)';
 TestResults              = struct('Pval',Test_Pval,'Sval',Test_Sval,'Coeffs',Test_Coeffs,'MargMeans',Test_MargMeans);
-ClusterResults           = struct('Threshold',ALPHA_ERROR,'MemberShip',Test_ClusIdx,'Size',Test_ClusSize,'Sval',Test_ClusVal);
 
+if CLUS_flag,
+for k=1:size(Test_Sval,2),    
+    Hgrid                       = Test_Pval(:,k)<ALPHA_ERROR;
+    Sgrid                       = Test_Sval(:,k);    
+    [TestClusVal,TestGridIdx,TestClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
+    Test_ClusVal{k}             = TestClusVal;
+    Test_ClusSize{k}            = TestClusSize;
+    Test_ClusIdx{k}             = TestGridIdx;
+end
+ClusterResults           = struct('Threshold',ALPHA_ERROR,'MemberShip',Test_ClusIdx,'Size',Test_ClusSize,'Sval',Test_ClusVal);
+end
 %% ------------------------------------------------------------------------
-% DISTRIBUTION FREE TEST
-% -------------------------------------------------------------------------
 % Check whether they should be performed
-if NUM_REP>0 
-    disp('Starting permutation and bootstrap analysis!')
-else
+if (~PERM_flag && ~ BOT_flag)
     disp('You chose not to run permutation and bootstrap analysis!')
     return;
 end
 
+% DISTRIBUTION FREE TEST
+% -------------------------------------------------------------------------
 if PERM_flag
+    disp('Starting permutation analysis!')
 % PERMUTATION ANALYSIS 
-PERM    = get_PermMatrix(SUBID,NUM_REP);
 Perm = struct();
-for i_pos=1:size(DATA,1),        
-   
-    utils.progressBar(['Permutation GridPoint ',num2str(i_pos),' [.']);    
+for i_stim=1:NUM_STIM      
+    StimData        = DATA(STIM==i_stim,:);
+    StimDesign      = DESIGN_MATRIX(STIM==i_stim,:);
+    PermSUBID       = SUBID(STIM==i_stim);
+    PERM            = get_PermMatrix(PermSUBID,NUM_REP);
+    
+    utils.progressBar(['Permutation Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
         utils.progressBar(rep);
-        PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
-        [Pval,StatVal,MargMeans,Coeffs]     = get_StatisticalValues(PermutationData,DESIGN_MATRIX);          
-        Perm(i_pos).Pval(:,rep)             = Pval;        
-        Perm(i_pos).Sval(:,rep)             = StatVal;
-        Perm(i_pos).Coeffs(:,rep)           = Coeffs;
-        Perm(i_pos).MargMeans(:,rep)        = MargMeans;
+        PermutationData                     = StimData(PERM(:,rep));          
+        [Pval,StatVal,Coeffs]               = get_StatisticalValues(PermutationData,StimDesign);          
+        Perm(i_stim).Pval(:,rep)            = Pval;        
+        Perm(i_stim).Sval(:,rep)            = StatVal;
+        Perm(i_stim).Coeffs(:,rep)          = Coeffs;
     end    
     utils.progressBar('1');   
     
-    testCriterion                   = abs(squeeze(Test(i_pos).Coeffs));
-    permCriterion                   = abs(squeeze(Perm(i_pos).Coeffs)); 
+    testCriterion                   = abs(squeeze(Test(i_stim).Coeffs));
+    permCriterion                   = abs(squeeze(Perm(i_stim).Coeffs)); 
     P                               = crit2pval(testCriterion,permCriterion);
-    Perm(i_pos).ContrastPval        = P;    
+    Perm(i_stim).ContrastPval        = P;    
 end
 TestResults.PermutationPval = cat(1,Perm.ContrastPval);
 end
 
 
-if BOOT_flag,
+if BOT_flag,
+   disp('Starting permutation analysis!')
 % BOOTSTRAP ANALYSIS 
-BOT     = get_BootMatrix(DESIGN,NUM_REP);
 Boot    = struct();
-for i_pos=1:size(DATA,1),            
+for i_stim=1:NUM_STIM,            
+    StimData        = DATA(STIM==i_stim,:);
+    StimDesign      = DESIGN_MATRIX(STIM==i_stim,:);
+    BotDesign       = DESIGN(STIM==i_stim,:);
+    BOT            	= get_BootMatrix(BotDesign,NUM_REP);
     
-    utils.progressBar(['Bootstrap GridPoint ',num2str(i_pos),' [.']);    
+    utils.progressBar(['Bootstrap Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
         utils.progressBar(rep);
-        BootData                        = (DATA(i_pos,BOT(:,rep)))';          
-        [Pval,StatVal,MargMeans,Coeffs] = get_StatisticalValues(BootData,DESIGN_MATRIX);          
-        Boot(i_pos).Pval(:,rep)          = Pval;        
-        Boot(i_pos).Sval(:,rep)          = StatVal;
-        Boot(i_pos).Coeffs(:,rep)        = Coeffs;
-        Boot(i_pos).MargMeans(:,rep)     = MargMeans;
+        BootData                        = StimData(BOT(:,rep));        
+        [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(BootData,StimDesign);          
+        Boot(i_stim).Pval(:,rep)        = Pval;        
+        Boot(i_stim).Sval(:,rep)        = StatVal;
+        Boot(i_stim).Coeffs(:,rep)      = Coeffs;
+        Boot(i_stim).MargMeans(:,rep)   = MargMeans;
     end
     utils.progressBar('1');           
-    Boot(i_pos).Power       = nanmean(Boot(i_pos).Pval<ALPHA_ERROR,2);
-    Boot(i_pos).CoeffsCI    = cat(2,quantile(Boot(i_pos).Coeffs,ALPHA_ERROR./2,2),quantile(Boot(i_pos).Coeffs,(1-ALPHA_ERROR./2),2));      
+    Boot(i_stim).Power       = nanmean(Boot(i_stim).Pval<ALPHA_ERROR,2);
+    Boot(i_stim).CoeffsCI    = cat(2,quantile(Boot(i_stim).MargMeans,ALPHA_ERROR./2,2),quantile(Boot(i_stim).MargMeans,(1-ALPHA_ERROR./2),2));      
 end
-TestResults.Power       = single(cat(2,Boot.Power));
-TestResults.CoeffsCI    = single(cat(3,Boot.CoeffsCI));
+TestResults.Power       = single(cat(2,Boot.Power))';
+TestResults.CoeffsCI    = permute(single(cat(3,Boot.CoeffsCI)),[3,1,2]);
 end
+
+
 %% ------------------------------------------------------------------------
 % PERMUTATION BASED CLUSTER ANALYSIS 
 % -------------------------------------------------------------------------
-Perm_Pval = permute(cat(3,Perm.Pval),[3,1,2]);
+if CLUS_flag,
+    disp('Starting Cluster analysis!')
+% Reorder  into stim,factor,repetition
+Perm_Pval = permute(cat(3,Perm.Pval),[3,1,2]); 
 Perm_Sval = permute(cat(3,Perm.Sval),[3,1,2]);
 for k=1:length(ClusterResults)
     TestClusterNum              = length(ClusterResults(k).Sval);    
@@ -126,10 +145,10 @@ for k=1:length(ClusterResults)
         for rep=1:NUM_REP,    
             utils.progressBar(rep);
             
-            Hgrid               = utils.vec2mesh(Perm_Pval(:,k,rep)<ALPHA_ERROR);
-            Sgrid               = utils.vec2mesh(Perm_Sval(:,k,rep));
+            Hgrid               = Perm_Pval(:,k,rep)<ALPHA_ERROR;
+            Sgrid               = Perm_Sval(:,k,rep);
             PermClusVal         = utils.stats2cluster(Hgrid,Sgrid);
-            AbsPermClusVal   = sort(abs(PermClusVal));                        
+            AbsPermClusVal      = sort(abs(PermClusVal));                        
             IsSignificantbyChance = true(1,TestClusterNum);
             
             if isempty(PermClusVal),
@@ -137,9 +156,7 @@ for k=1:length(ClusterResults)
                 SigCounts(rep,:)        = IsSignificantbyChance;  
                 continue; 
             end
-            
-            
-            
+
             for PickTestCluster=1:TestClusterNum
                 IsSignificantbyChance(PickTestCluster) = AbsPermClusVal(1)>AbsTestClustVal(PickTestCluster);
             end
@@ -152,35 +169,39 @@ for k=1:length(ClusterResults)
     end    
     ClusterResults(k).PermPval =  ClusterPermPval;  
 end
+
+end
+
 end
 %% LOCAL FUNCTIONS
 % ANALYSIS FUNCTION 
-% Calculates the  statistical Values
-% @params DATA, a vector of data to perform the analysis
-% @params DESIGN_MATRIX, the desoing matrix of the experiment
-% @return PERM, a subject-balanced permutation matrix 
-
-function [Pval,StatVal,MargMeans,Coeffs] = get_StatisticalValues(DATA,DESIGN_MATRIX)   
+function [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(DATA,DESIGN_MATRIX)   
+    % for k=1:8, bin2dec(nms{k}([3,8,13]+1)), end -> [0 4 2 6 1 5 3 7]
+    % designmatrix is [6 7 4 5 2 3 0 1]
+    % f = []; for k=1:8, f = [f,find(ismember(a,b(k)))], end -> [4 8 2 6 3 7 1 5]; 
+    RestoreOrder = [4 8 2 6 3 7 1 5];
     % DEF_MODEL will returning Interaction 
-    % Explained as Crosstable:
-    %     90  45              90 45
-    % BI   +  -     oder  BI  -   +
-    % MO   -  +           MO  +   -
+    % Interaction explained as Crosstable:
+    %      90  45               90 45
+    % M1    +  -     oder  M1   -   +
+    % NPMA  -  +          NPMA  +   -
     % We show the sign of BI 90° and MO 45°   
-    DEF_MODEL               = [1 0 0;0 1 0;1 1 0;0 0 1];        
-    % Picking Values will be for 'Waveform', 'Orientation', 'Interaction')
-    PickVal                 = 2:4;
-    % Picking Coeffs will be for ('BI=1', 'LM=1', 'BI=1 * LM=1')
-    PickCoeffs              = [3,5,9];
-    statistical_test        = @(x,y)anovan(x,y,'random',3,'display','off','varnames',{'BI','LM','SUB'},'model',DEF_MODEL);    
+    DEF_MODEL               = [1 0 0 0;0 1 0 0;0 0 1 0;1 0 1 0;0 1 1 0;0 0 0 1];        
+    % Picking Values will be for 'Waveform', 'Orientation', 'Target','Interaction Waveform x Target',,'Interaction Orientation x Target')
+    PickVal                 = 2:6;    
+    % Picking Coeffs will be for ('BI=1', 'LM=1', 'M1 =1','BI=1 * M1=1' and 'LM=1 * M1=1')  % stats.coeffnames(PickCoeffs)
+    PickCoeffs              = [3,5,7,11,15];    
+    statistical_test        = @(x,y)anovan(x,y,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'},'model',DEF_MODEL);        
     [~,tab,stats]           = statistical_test(DATA,DESIGN_MATRIX);
-    warning('off','stats:multcompare:IgnoringRandomEffects')
-    [~,m,~,~]               = multcompare(stats,'dim',[1,2],'display','off');
-    warning('on','stats:multcompare:IgnoringRandomEffects')
+    
     Pval                    = single([tab{PickVal,7}]);
-    StatVal                 = single([tab{PickVal,6}]);    
-    MargMeans               = single(m(:,1));
+    StatVal                 = single([tab{PickVal,6}]);   
     Coeffs                  = single(stats.coeffs(PickCoeffs));
+
+    warning('off','stats:multcompare:IgnoringRandomEffects')
+    [~,m,~,~]               = multcompare(stats,'dim',[1,2,3],'display','off');    
+    warning('on','stats:multcompare:IgnoringRandomEffects')
+    MargMeans                = m(RestoreOrder,1); % in order of cat(1,setup.IO.BI,setup.IO.LM,setup.IO.M1)', i.e. DesignMatrix
 end
 
 % CONSTRUCTION OF THE PERMUTATION ARRAY
@@ -215,10 +236,11 @@ function BOT = get_BootMatrix(DESIGN,NUM_REP)
             bot_sample  = datasample(find(dsg_GetPut),sum(dsg_GetPut));
             bot_set(dsg_GetPut) = bot_sample;
         end
-        % output test: all((dec_design(bot_set))-dec_design == 0)
+        % output test: all(((dec_design(bot_set))-dec_design) == 0)
         BOT(:,rep) = bot_set;
     end
 end
+
 
 % Calculation of permutation-derived P-Values
 % @params Local_Test_Sval, the statistical value from the real experiment

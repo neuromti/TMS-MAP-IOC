@@ -61,31 +61,22 @@ load([folder.results.stats,'map_gridded.mat'],'GRD')
 DESIGN          = cat(1,SUB.DesignMatrix);
 SUBID           = cat(1,SUB.subID);
 
-for i_d = 1:length(Label.Dataset)
+for i_d = 1:length(length(Label.Dataset(1:3)))
     % Where to save the files
     savefile                    = [folder.results.stats,Label.Dataset{i_d},'\stats.mat'];
-    [savepath,filename,filext]  = fileparts(savefile);
-    
-    % Initalize for Logging
+    if ~exist(fileparts(savefile),'dir'), mkdir(fileparts(savefile)); end
     log_betreff   = [Label.Field{(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)))},' ',Label.Weight{(ismember({'qu','th'},Label.Dataset{i_d}(1:2)))},': Statistics '];
     
-    if ~exist (savefile,'file'), %check whether already processed before 
-        betreff = [log_betreff,'Started'];
-        disp(betreff)
+    if exist (savefile,'file'), %check whether already processed before
+        notify_me([log_betreff,'already analyzed'],'');
+    else
+        disp([log_betreff,'Started']);
         eval(['DATA = cat(2,GRD.',Label.Dataset{i_d},');']);
         
-        A = datetime('now');
+        ProcessingTime = utils.measure_ProcessingTime();
         [TestResults,ClusterResults] = utils.mappingdata2statistics(DATA,SUBID,DESIGN);     
-        O = datetime('now')-A;
-        O = sprintf('It ran for %.1g years %.1g months %.1g days %.1g hours %.2g minutes %.2g seconds',datevec(O));
-        if ~exist(savepath,'dir'), mkdir(savepath); end
-        save(savefile,'TestResults','ClusterResults');   
-        
-        betreff = [log_betreff,'Finished'];
-        notify_me(betreff,O);
-    else
-        betreff = [log_betreff,'already analyzed'];
-        notify_me(betreff,'');
+        save(savefile,'TestResults','ClusterResults');      
+        notify_me([log_betreff,'Finished'],utils.measure_ProcessingTime(ProcessingTime));
 
     end
 end
@@ -100,15 +91,14 @@ clc
 delete([folder.results.figs,Label.Weight{1},'\*.tif'])
 delete([folder.results.figs,Label.Weight{2},'\*.tif'])
 
-for i_d = 1:length(Label.Dataset)
+for i_d = 1:length(Label.Dataset(1:3))
     load([folder.results.stats,'\',Label.Dataset{i_d},'\stats.mat']);            
     i_field     = find(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)));
     i_weight    = find(ismember({'qu','th'},Label.Dataset{i_d}(1:2)));
   
     close all
     
-    for k=1:size(TestResults.Pval,2)
-        
+    for k=1:size(TestResults.Pval,2)        
 
         PlotLabel   = [Label.Title{k},' ->',Label.Field{i_field}];
          

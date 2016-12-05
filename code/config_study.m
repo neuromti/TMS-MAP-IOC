@@ -93,6 +93,6 @@ Label.Save      =  {'Waveform', 'Orientation', 'W-O-Interaction'};
 Label.Field     = {'Amplitude','MEP','Latency'};
 Label.Weight    = {'Quadratic','Spherical'};   
 Label.Dataset   = {'quad_AMP'    'quad_MEP'    'quad_LAT'    'th_AMP'    'th_MEP'    'th_LAT'};
-
+Label.ioc_Field = {'Amplitude','MEP','Latency','TimeCourse'};
 %%
 save([folder.code,'config.mat'],'headmodel','gridmodel','setup','folder','Label')
