@@ -3,7 +3,7 @@
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
 cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
-load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder');
+load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','headmodel','setup','folder','Label');
 
 %% loading data
 logfilename = [folder.code,'Logfile.log'];
@@ -14,7 +14,7 @@ D([1,2])    = [];
 latDATA     = []; %latenz data 
 ampDATA     = []; %amplitude data
 rawDATA     = []; %raw MEP waveform data
-subAverage  = struct('ampDATA',[],'mepDATA',[],'latDATA',[],'rawDATA',[],'filtDATA',[],'msoDATA',[],'Design',[],'Condition',[]); %initialize for runwise averaged data
+SUB         = struct('ampDATA',[],'mepDATA',[],'latDATA',[],'rawDATA',[],'filtDATA',[],'msoDATA',[],'Design',[],'Condition',[]); %initialize for runwise averaged data
 % load data from files and concatenate
 for ss=1:length(setup.SUB.id), %every subject
     s = setup.SUB.id(ss);
@@ -22,8 +22,7 @@ for ss=1:length(setup.SUB.id), %every subject
     for c=1:length(setup.IO.label.all), %all conditions
         filename = ['S',num2str(s),'C',num2str(c),'.mat'];        
         fprintf(logfileid,'Loading %s ',filename);
-        %check whether file exists and load if it does, otherwise throw
-        %error
+        %check whether file exists and load if it does, otherwise throw error
         if sum(ismember({D.name},filename)==1) 
             load([folder.data.ioc,filename]);
         else
@@ -47,7 +46,7 @@ for ss=1:length(setup.SUB.id), %every subject
         artifacted          = (ioc.amp<0) | (ioc.lat <0 | ioc.lat == 0);
         cleaned(artifacted) = NaN;       
         t_lat               = nanmean(reshape(cleaned,10,7),1)';
-        subAverage.latDATA  = cat(1,subAverage.latDATA,t_lat);
+        SUB.latDATA         = cat(1,SUB.latDATA,t_lat);
         
         % MEP 
         % concatenate data vectors after cleaning for artifacts (indicated
@@ -57,8 +56,8 @@ for ss=1:length(setup.SUB.id), %every subject
         cleaned(artifacted) = NaN;
         t_amp               = nanmean(reshape(cleaned,10,7),1)';
         t_mep               = nanmean(reshape(cleaned,10,7)>50,1)';
-        subAverage.ampDATA  = cat(1,subAverage.ampDATA,t_amp);        
-        subAverage.mepDATA  = cat(1,subAverage.mepDATA,t_mep); 
+        SUB.ampDATA         = cat(1,SUB.ampDATA,t_amp);        
+        SUB.mepDATA         = cat(1,SUB.mepDATA,t_mep); 
         
         % TIMECOURSE 
         % concatenate data vectors after cleaning for artifacts (indicated
@@ -71,19 +70,19 @@ for ss=1:length(setup.SUB.id), %every subject
         filtered(artifacted,:)  = NaN;        
         t_raw               = reshape(squeeze(nanmean(reshape(baselined,10,7,601),1)),7,[]);
         t_filt              = reshape(squeeze(nanmean(reshape(filtered,10,7,601),1)),7,[]);
-        subAverage.rawDATA  = cat(1,subAverage.rawDATA,t_raw);
-        subAverage.filtDATA  = cat(1,subAverage.filtDATA,t_filt);
+        SUB.rawDATA         = cat(1,SUB.rawDATA,t_raw);
+        SUB.filtDATA        = cat(1,SUB.filtDATA,t_filt);
         
         %concatenate factor vector for intensity in MSO and RMT
         mso                 = sort(unique(ioc.int));
-        subAverage.msoDATA  = cat(1,subAverage.msoDATA,mso);
+        SUB.msoDATA         = cat(1,SUB.msoDATA,mso);
         
         %create Design Matrix: BI LM M1 SUB SI       
-        subAverage.Design   = cat(1,subAverage.Design,cat(2,repmat(cat(2,setup.IO.BI(c)',setup.IO.LM(c)',setup.IO.M1(c)',s),7,1),[1:7]'));
+        SUB.Design          = cat(1,SUB.Design,cat(2,repmat(cat(2,setup.IO.BI(c)',setup.IO.LM(c)',setup.IO.M1(c)',s),7,1),[1:7]'));
     end
 end
 %create Design Matrix for each Condition
-subAverage.Condition = cat(2,bi2de(subAverage.Design(:,1:3))+1,subAverage.Design(:,4:end)); 
+SUB.Condition = cat(2,bi2de(SUB.Design(:,1:3))+1,SUB.Design(:,4:end)); 
 fclose(logfileid);
 %% PERMUTATION ANALYSIS
 
@@ -103,7 +102,7 @@ do_test = @(x,y)anovan(x,y,'random',4,'display','off','varnames',{'BI','LM','M1'
 PERM        = {};
 for si=1:7,
     perm_set    = [];
-    idx         = find(subAverage.Design(:,end)==si);
+    idx         = find(SUB.Design(:,end)==si);
     for rep=1:num_rep, 
         perm_set    = cat(1,perm_set,idx(randperm(length(idx)))');
     end
@@ -113,12 +112,12 @@ end
 % CONSTRUCTION OF THE BOOTSTRAPPING VECTOR
 % Output: A cell array containing for each stimulation intensity a factor-balanced bootstrap matrix
 BOT         = {};
-orderByte   = bin2dec(num2str(subAverage.Design(1:7:54,1:3)));
+orderByte   = bin2dec(num2str(SUB.Design(1:7:54,1:3)));
 
 for si=1:7.    
-    idx         = find(subAverage.Design(:,end)==si);        
+    idx         = find(SUB.Design(:,end)==si);        
     bot_set     = NaN(num_rep,size(idx,1));
-    sel_design  = bin2dec(num2str(subAverage.Design(idx,1:3)));
+    sel_design  = bin2dec(num2str(SUB.Design(idx,1:3)));
     for i_cond = 1:8, %balancing for each factor, bootstrapping only subjects, not factor levels
         cond_idx = (ismember(sel_design,orderByte(i_cond)));
         cond_sel = idx(cond_idx);
@@ -147,7 +146,7 @@ for voi = 1:length(VOI),
 
     % ESTIMATES BOOTSTRAP 95% CI and PERMUTATION TEST P values 
     tic
-    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
+    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(SUB,DATA,PERM,BOT,do_test,num_rep,setup);
     toc 
     
     % AGGREGATE RESULTS FOR EACH VOI
@@ -164,7 +163,7 @@ utils.do_log(logfilename,@()fprintf(logfileid,'Variables saved \n'));
 
 % PERFORMS STATISTICAL ANALYSIS FOR EACH TIMEPOINT OF RAW DATA
 
-rawDATA = subAverage.rawDATA;
+rawDATA = SUB.rawDATA;
 delete(gcp('nocreate'))
 parpool(4)
 parfor t=1:size(rawDATA,2)
@@ -177,7 +176,7 @@ parfor t=1:size(rawDATA,2)
     % P Output: A matrix containing for each stimulation intensity the p-value of
     % a two-sided hypothesis test
     tic
-    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(subAverage,DATA,PERM,BOT,do_test,num_rep,setup);
+    [bot_CI,bot_D,P,true_M] = utils.do_botandperm_IOC(SUB,DATA,PERM,BOT,do_test,num_rep,setup);
     clk_time = toc
     % AGGREGATE RESULTS FOR EACH VOI
     STAT_TIMECOURSE(t).bot_CI   = bot_CI;

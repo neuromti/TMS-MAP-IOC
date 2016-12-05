@@ -4,9 +4,13 @@ function [TestResults,ClusterResults] = mappingdata2statistics(DATA,SUBID,DESIGN
 % -------------------------------------------------------------------------
 ALPHA_ERROR         = 0.05;
 DESIGN_MATRIX       = cat(2,DESIGN,SUBID);
-NUM_REP             = 1000;
+NUM_REP             = 100;
 disp(['Alpha Error: ',num2str(ALPHA_ERROR)])
 disp(['Number of Repetitions ',num2str(NUM_REP)])
+
+% Flags for structured code testing 
+PERM_flag   = true;
+BOOT_flag   = true;
 %% ------------------------------------------------------------------------
 % PERFORMING TRUE ANALYSIS
 % -------------------------------------------------------------------------
@@ -28,8 +32,8 @@ Test_MargMeans = cat(2,Test.MargMeans);
 for k=1:size(Test_Sval,2),    
     Hgrid                       = utils.vec2mesh((Test_Pval(:,k)<ALPHA_ERROR));
     Sgrid                       = utils.vec2mesh(Test_Sval(:,k));    
-    [ClusVal,GridIdx,ClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
-    Test_ClusVal{k}             = ClusVal;
+    [PermClusVal,GridIdx,ClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
+    Test_ClusVal{k}             = PermClusVal;
     Test_ClusSize{k}            = ClusSize;
     Test_ClusIdx{k}             = GridIdx;
 end
@@ -48,6 +52,7 @@ else
     return;
 end
 
+if PERM_flag
 % PERMUTATION ANALYSIS 
 PERM    = get_PermMatrix(SUBID,NUM_REP);
 Perm = struct();
@@ -70,10 +75,11 @@ for i_pos=1:size(DATA,1),
     P                               = crit2pval(testCriterion,permCriterion);
     Perm(i_pos).ContrastPval        = P;    
 end
-
 TestResults.PermutationPval = cat(1,Perm.ContrastPval);
+end
 
 
+if BOOT_flag,
 % BOOTSTRAP ANALYSIS 
 BOT     = get_BootMatrix(DESIGN,NUM_REP);
 Boot    = struct();
@@ -95,15 +101,15 @@ for i_pos=1:size(DATA,1),
 end
 TestResults.Power       = single(cat(2,Boot.Power));
 TestResults.CoeffsCI    = single(cat(3,Boot.CoeffsCI));
-
-
+end
 %% ------------------------------------------------------------------------
 % PERMUTATION BASED CLUSTER ANALYSIS 
 % -------------------------------------------------------------------------
 Perm_Pval = permute(cat(3,Perm.Pval),[3,1,2]);
 Perm_Sval = permute(cat(3,Perm.Sval),[3,1,2]);
 for k=1:length(ClusterResults)
-    TestClusterNum                      = length(ClusterResults(k).Sval);    
+    TestClusterNum              = length(ClusterResults(k).Sval);    
+    AbsTestClustVal             = abs(ClusterResults(k).Sval);
     
     if TestClusterNum==0,    
         ClusterResults(k).PermPval = [];
@@ -112,29 +118,31 @@ for k=1:length(ClusterResults)
     end            
     
     if TestClusterNum>0  
-        
-        [AbsTestClusterVal]                 = abs(ClusterResults(k).Sval);        
-        SigCounts                           = true(NUM_REP,TestClusterNum);
+                
+        SigCounts                   = true(NUM_REP,TestClusterNum);
             
         utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
         for rep=1:NUM_REP,    
             utils.progressBar(rep);
+            
             Hgrid               = utils.vec2mesh(Perm_Pval(:,k,rep)<ALPHA_ERROR);
             Sgrid               = utils.vec2mesh(Perm_Sval(:,k,rep));
-            ClusVal             = utils.stats2cluster(Hgrid,Sgrid);
-
-            if isempty(ClusVal),
+            PermClusVal         = utils.stats2cluster(Hgrid,Sgrid);
+            AbsPermClusVal   = sort(abs(PermClusVal));                        
+            IsSignificantbyChance = true(1,TestClusterNum);
+            
+            if isempty(PermClusVal),
                 IsSignificantbyChance   = false(1,TestClusterNum);
                 SigCounts(rep,:)        = IsSignificantbyChance;  
                 continue; 
             end
             
-            AbsPermClusterVal   = sort(abs(ClusVal));                        
+            
             
             for PickTestCluster=1:TestClusterNum
-                IsSignificantbyChance(PickTestCluster) = AbsPermClusterVal(1)>AbsTestClusterVal(PickTestCluster);
+                IsSignificantbyChance(PickTestCluster) = AbsPermClusVal(1)>AbsTestClustVal(PickTestCluster);
             end
-            SigCounts(rep,:)    = IsSignificantbyChance(PutBackInOrder);              
+            SigCounts(rep,:)    = IsSignificantbyChance;              
         end   
         utils.progressBar('1');   
             
