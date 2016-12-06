@@ -1,4 +1,4 @@
-function [TestResults,ClusterResults] = iocdata2statistics(DATA,DESIGN,SUBID,STIM,PERM_flag,BOT_flag)
+function [TestResults,ClusterResults] = iocdata2statistics(DATA,DESIGN,SUBID,STIM,PERM_flag,BOOT_flag)
 %% -------------------------------------------------------------------------
 % DEFINITION OF PARAMETERS
 % -------------------------------------------------------------------------
@@ -12,7 +12,7 @@ disp(['Number of Repetitions ',num2str(NUM_REP)])
 % Flags for structured code testing 
 if nargin <5,
     PERM_flag   = true;
-    BOT_flag   = true;
+    BOOT_flag   = true;
 end
 if nargout >1 && PERM_flag
     CLUS_flag   = true;
@@ -53,7 +53,7 @@ ClusterResults           = struct('Threshold',ALPHA_ERROR,'MemberShip',Test_Clus
 end
 %% ------------------------------------------------------------------------
 % Check whether they should be performed
-if (~PERM_flag && ~ BOT_flag)
+if (~PERM_flag && ~ BOOT_flag)
     disp('You chose not to run permutation and bootstrap analysis!')
     return;
 end
@@ -68,7 +68,7 @@ for i_stim=1:NUM_STIM
     StimData        = DATA(STIM==i_stim,:);
     StimDesign      = DESIGN_MATRIX(STIM==i_stim,:);
     PermSUBID       = SUBID(STIM==i_stim);
-    PERM            = get_PermMatrix(PermSUBID,NUM_REP);
+    PERM            = utils.get_PermMatrix(PermSUBID,NUM_REP);
     
     utils.progressBar(['Permutation Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
@@ -83,28 +83,29 @@ for i_stim=1:NUM_STIM
     
     testCriterion                   = abs(squeeze(Test(i_stim).Coeffs));
     permCriterion                   = abs(squeeze(Perm(i_stim).Coeffs)); 
-    P                               = crit2pval(testCriterion,permCriterion);
+    P                               = utils.crit2pval(testCriterion,permCriterion);
     Perm(i_stim).ContrastPval        = P;    
 end
 TestResults.PermutationPval = cat(1,Perm.ContrastPval);
 end
 
 
-if BOT_flag,
+if BOOT_flag,
    disp('Starting permutation analysis!')
 % BOOTSTRAP ANALYSIS 
 Boot    = struct();
 for i_stim=1:NUM_STIM,            
     StimData        = DATA(STIM==i_stim,:);
-    StimDesign      = DESIGN_MATRIX(STIM==i_stim,:);
-    BotDesign       = DESIGN(STIM==i_stim,:);
-    BOT            	= get_BootMatrix(BotDesign,NUM_REP);
+    StimSUBID       = SUBID(STIM==i_stim,:);
+    StimDESIGN      = DESIGN(STIM==i_stim,:);
+    BOT            	= utils.get_BootMatrix(StimDESIGN,NUM_REP);
     
     utils.progressBar(['Bootstrap Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
         utils.progressBar(rep);
         BootData                        = StimData(BOT(:,rep));        
-        [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(BootData,StimDesign);          
+        BootDesign                      = cat(2,StimDESIGN,StimSUBID(BOT(:,rep)));       
+        [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(BootData,BootDesign);          
         Boot(i_stim).Pval(:,rep)        = Pval;        
         Boot(i_stim).Sval(:,rep)        = StatVal;
         Boot(i_stim).Coeffs(:,rep)      = Coeffs;
@@ -202,54 +203,4 @@ function [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(DATA,DESIGN_MAT
     [~,m,~,~]               = multcompare(stats,'dim',[1,2,3],'display','off');    
     warning('on','stats:multcompare:IgnoringRandomEffects')
     MargMeans                = m(RestoreOrder,1); % in order of cat(1,setup.IO.BI,setup.IO.LM,setup.IO.M1)', i.e. DesignMatrix
-end
-
-% CONSTRUCTION OF THE PERMUTATION ARRAY
-% Permutes the factor levels for all subjects present in the true data 
-% @returns PERM, a subject-balanced permutation matrix 
-function PERM = get_PermMatrix(SUBID,NUM_REP)
-    PERM        = int32([]);
-    u_sub       = unique(SUBID);
-    for rep=1:NUM_REP, 
-        perm_set    = NaN(size(SUBID));
-        for i_sub=1:length(u_sub)
-            sub_GetPut  = find(SUBID==u_sub(i_sub));      
-            perm_sample = sub_GetPut(randperm(length(sub_GetPut)),:);
-            perm_set(sub_GetPut) = perm_sample;
-        end
-        %output test all((SUBID-SUBID(perm_set))==0)
-        PERM(:,rep) = perm_set;
-    end
-end
-
-% CONSTRUCTION OF THE BOOTSTRAPPING VECTOR
-% Draws randomly from subjects with replacement for all factor levels present in the true data 
-% @returns BOT, a factor-balanced bootstrap matrix
-function BOT = get_BootMatrix(DESIGN,NUM_REP)
-    BOT         = int32([]);
-    dec_design  = bin2dec(num2str(DESIGN))+1;
-    u_dsg       = unique(dec_design);
-    for rep=1:NUM_REP, 
-        bot_set    = NaN(size(dec_design));
-        for i_dsg=1:length(u_dsg)
-            dsg_GetPut  = dec_design==u_dsg(i_dsg);
-            bot_sample  = datasample(find(dsg_GetPut),sum(dsg_GetPut));
-            bot_set(dsg_GetPut) = bot_sample;
-        end
-        % output test: all(((dec_design(bot_set))-dec_design) == 0)
-        BOT(:,rep) = bot_set;
-    end
-end
-
-
-% Calculation of permutation-derived P-Values
-% @params Local_Test_Sval, the statistical value from the real experiment
-% @params Local_Perm_Sval, a vector of statistical values from the permutated experiments
-% @returns P, an estimate of the alpha error
-function P = crit2pval(TrueSval,RandomSval)
-    TrueMat     = repmat(TrueSval,size(RandomSval,2),1)';
-    numSig      = sum(RandomSval>=TrueMat,2);
-    divideBy    = (size(RandomSval,2));
-    P           = single(numSig./divideBy);
-    P           = max(P,1/divideBy)'; 
 end

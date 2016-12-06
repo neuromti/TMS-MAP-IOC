@@ -34,6 +34,8 @@ for idx_dataset = 1:length(D),
 end    
 save([folder.results.stats,'ioc_data.mat'],'SUB')
 %% PERMUTATION ANALYSIS
+
+load([folder.results.stats,'ioc_data.mat'],'SUB')
 DESIGN  = cat(1,SUB.DESIGN);
 SUBID   = cat(1,SUB.SUBID);
 STIM    = cat(1,SUB.STIMINTENSITYinSTEPS);

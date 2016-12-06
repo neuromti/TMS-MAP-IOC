@@ -61,7 +61,9 @@ load([folder.results.stats,'map_gridded.mat'],'GRD')
 DESIGN          = cat(1,SUB.DesignMatrix);
 SUBID           = cat(1,SUB.subID);
 
-for i_d = 1:length(length(Label.Dataset(1:3)))
+delete(gcp('nocreate'));
+parpool(3)
+parfor i_d = 1:length(length(Label.Dataset(1:3)))
     % Where to save the files
     savefile                    = [folder.results.stats,Label.Dataset{i_d},'\stats.mat'];
     if ~exist(fileparts(savefile),'dir'), mkdir(fileparts(savefile)); end
@@ -80,6 +82,7 @@ for i_d = 1:length(length(Label.Dataset(1:3)))
 
     end
 end
+delete(gcp('nocreate'));
 %% VISUALIZATION
 addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
 cmap = diverging_bwr_40_95_c42_n256;
