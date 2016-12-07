@@ -12,7 +12,7 @@ delete(gcp('nocreate'));
 parpool(4)
 parfor i_timepoint=1:length(TimePoints), 
     TimePointData                           = squeeze(DATA(:,i_timepoint,:));    
-    tmp                                     = utils.iocdata2statistics(TimePointData,DESIGN,SUBID,STIM,true,false);
+    tmp                                     = utils.iocdata2statistics(TimePointData,DESIGN,SUBID,STIM,true,true);
     tmp.Time_ms                             = (TimePoints(i_timepoint)-100)./5;  %transform sample to ms
     TestResults(i_timepoint)                = tmp;       
 end

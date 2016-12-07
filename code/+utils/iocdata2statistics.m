@@ -70,16 +70,16 @@ for i_stim=1:NUM_STIM
     PermSUBID       = SUBID(STIM==i_stim);
     PERM            = utils.get_PermMatrix(PermSUBID,NUM_REP);
     
-    utils.progressBar(['Permutation Intensity ',num2str(i_stim),' [.']);    
+   % utils.progressBar(['Permutation Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
-        utils.progressBar(rep);
+   %     utils.progressBar(rep);
         PermutationData                     = StimData(PERM(:,rep));          
         [Pval,StatVal,Coeffs]               = get_StatisticalValues(PermutationData,StimDesign);          
         Perm(i_stim).Pval(:,rep)            = Pval;        
         Perm(i_stim).Sval(:,rep)            = StatVal;
         Perm(i_stim).Coeffs(:,rep)          = Coeffs;
     end    
-    utils.progressBar('1');   
+   % utils.progressBar('1');   
     
     testCriterion                   = abs(squeeze(Test(i_stim).Coeffs));
     permCriterion                   = abs(squeeze(Perm(i_stim).Coeffs)); 
@@ -100,9 +100,9 @@ for i_stim=1:NUM_STIM,
     StimDESIGN      = DESIGN(STIM==i_stim,:);
     BOT            	= utils.get_BootMatrix(StimDESIGN,NUM_REP);
     
-    utils.progressBar(['Bootstrap Intensity ',num2str(i_stim),' [.']);    
+   % utils.progressBar(['Bootstrap Intensity ',num2str(i_stim),' [.']);    
     for rep=1:NUM_REP,         
-        utils.progressBar(rep);
+   %     utils.progressBar(rep);
         BootData                        = StimData(BOT(:,rep));        
         BootDesign                      = cat(2,StimDESIGN,StimSUBID(BOT(:,rep)));       
         [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(BootData,BootDesign);          
@@ -111,7 +111,7 @@ for i_stim=1:NUM_STIM,
         Boot(i_stim).Coeffs(:,rep)      = Coeffs;
         Boot(i_stim).MargMeans(:,rep)   = MargMeans;
     end
-    utils.progressBar('1');           
+   % utils.progressBar('1');           
     Boot(i_stim).Power       = nanmean(Boot(i_stim).Pval<ALPHA_ERROR,2);
     Boot(i_stim).CoeffsCI    = cat(2,quantile(Boot(i_stim).MargMeans,ALPHA_ERROR./2,2),quantile(Boot(i_stim).MargMeans,(1-ALPHA_ERROR./2),2));      
 end
@@ -142,9 +142,9 @@ for k=1:length(ClusterResults)
                 
         SigCounts                   = true(NUM_REP,TestClusterNum);
             
-        utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
+     %   utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
         for rep=1:NUM_REP,    
-            utils.progressBar(rep);
+     %       utils.progressBar(rep);
             
             Hgrid               = Perm_Pval(:,k,rep)<ALPHA_ERROR;
             Sgrid               = Perm_Sval(:,k,rep);
@@ -163,7 +163,7 @@ for k=1:length(ClusterResults)
             end
             SigCounts(rep,:)    = IsSignificantbyChance;              
         end   
-        utils.progressBar('1');   
+     %   utils.progressBar('1');   
             
         tmpPval         = sum(SigCounts)./(NUM_REP);
         ClusterPermPval = max(tmpPval,1/NUM_REP);   
@@ -186,12 +186,12 @@ function [Pval,StatVal,Coeffs,MargMeans] = get_StatisticalValues(DATA,DESIGN_MAT
     %      90  45               90 45
     % M1    +  -     oder  M1   -   +
     % NPMA  -  +          NPMA  +   -
-    % We show the sign of BI 90° and MO 45°   
-    DEF_MODEL               = [1 0 0 0;0 1 0 0;0 0 1 0;1 0 1 0;0 1 1 0;0 0 0 1];        
-    % Picking Values will be for 'Waveform', 'Orientation', 'Target','Interaction Waveform x Target',,'Interaction Orientation x Target')
-    PickVal                 = 2:6;    
-    % Picking Coeffs will be for ('BI=1', 'LM=1', 'M1 =1','BI=1 * M1=1' and 'LM=1 * M1=1')  % stats.coeffnames(PickCoeffs)
-    PickCoeffs              = [3,5,7,11,15];    
+    % We show the sign of BI 90° and MO 45°     
+    DEF_MODEL               = [1 0 0 0;0 1 0 0;0 0 1 0;1 1 1 0;0 0 0 1];            
+    % Picking Values will be for 'Waveform', 'Orientation', 'Target','Interaction Waveform x Orientation x Target')
+    PickVal                 = 2:4;    
+    % Picking Coeffs will be for ('BI=1', 'LM=1', 'M1 =1','BI=1 * LM=1 * M1=1')  % stats.coeffnames(PickCoeffs)
+    PickCoeffs              = [3,5,7,15];    
     statistical_test        = @(x,y)anovan(x,y,'random',4,'display','off','varnames',{'BI','LM','M1','SUB'},'model',DEF_MODEL);        
     [~,tab,stats]           = statistical_test(DATA,DESIGN_MATRIX);
     
