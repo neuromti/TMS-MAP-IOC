@@ -66,17 +66,17 @@ PERM    = utils.get_PermMatrix(SUBID,NUM_REP);
 Perm = struct();
 for i_pos=1:size(DATA,1),        
    
-    utils.progressBar(['Permutation GridPoint ',num2str(i_pos),' [.']);    
+  %  utils.progressBar(['Permutation GridPoint ',num2str(i_pos),' [.']);    
     for rep=1:NUM_REP,         
         utils.progressBar(rep);
-        PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
+  %      PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
         [Pval,StatVal,MargMeans,Coeffs]     = get_StatisticalValues(PermutationData,DESIGN_MATRIX);          
         Perm(i_pos).Pval(:,rep)             = Pval;        
         Perm(i_pos).Sval(:,rep)             = StatVal;
         Perm(i_pos).Coeffs(:,rep)           = Coeffs;
         Perm(i_pos).MargMeans(:,rep)        = MargMeans;
     end    
-    utils.progressBar('1');   
+  %  utils.progressBar('1');   
     
     testCriterion                   = abs(squeeze(Test(i_pos).Coeffs));
     permCriterion                   = abs(squeeze(Perm(i_pos).Coeffs)); 
@@ -92,9 +92,9 @@ if BOOT_flag,
 BOT     = utils.get_BootMatrix(DESIGN,NUM_REP);
 Boot    = struct();
 for i_pos=1:size(DATA,1),                
-    utils.progressBar(['Bootstrap GridPoint ',num2str(i_pos),' [.']);    
+ %   utils.progressBar(['Bootstrap GridPoint ',num2str(i_pos),' [.']);    
     for rep=1:NUM_REP,         
-        utils.progressBar(rep);
+ %       utils.progressBar(rep);
         BootData                        = (DATA(i_pos,BOT(:,rep)))';
         BootDesign                      = cat(2,DESIGN,SUBID(BOT(:,rep)));
         [Pval,StatVal,MargMeans,Coeffs] = get_StatisticalValues(BootData,BootDesign);          
@@ -103,7 +103,7 @@ for i_pos=1:size(DATA,1),
         Boot(i_pos).Coeffs(:,rep)        = Coeffs;
         Boot(i_pos).MargMeans(:,rep)     = MargMeans;
     end
-    utils.progressBar('1');           
+ %   utils.progressBar('1');           
     Boot(i_pos).Power       = nanmean(Boot(i_pos).Pval<ALPHA_ERROR,2);
     Boot(i_pos).CoeffsCI    = cat(2,quantile(Boot(i_pos).Coeffs,ALPHA_ERROR./2,2),quantile(Boot(i_pos).Coeffs,(1-ALPHA_ERROR./2),2));      
 end
@@ -131,9 +131,9 @@ for k=1:length(ClusterResults)
                 
         SigCounts                   = true(NUM_REP,TestClusterNum);
             
-        utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
+  %      utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
         for rep=1:NUM_REP,    
-            utils.progressBar(rep);
+  %         utils.progressBar(rep);
             
             Hgrid               = utils.vec2mesh(Perm_Pval(:,k,rep)<ALPHA_ERROR);
             Sgrid               = utils.vec2mesh(Perm_Sval(:,k,rep));
@@ -154,7 +154,7 @@ for k=1:length(ClusterResults)
             end
             SigCounts(rep,:)    = IsSignificantbyChance;              
         end   
-        utils.progressBar('1');   
+   %     utils.progressBar('1');   
             
         tmpPval         = sum(SigCounts)./(NUM_REP);
         ClusterPermPval = max(tmpPval,1/NUM_REP);   
