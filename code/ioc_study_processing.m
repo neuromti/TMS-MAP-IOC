@@ -1,7 +1,7 @@
 %% Input-Output-Curve Analysis
 % configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
+utils.cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','setup','folder','Label');
 %% loading data
@@ -29,7 +29,7 @@ for idx_dataset = 1:length(D),
     tmp_DesignMatrix                            = [setup.IO.BI(T.data_cond),setup.IO.LM(T.data_cond),setup.IO.M1(T.data_cond)];
     SUB(idx_dataset).DESIGN                     = repmat(tmp_DesignMatrix,7,1);
     SUB(idx_dataset).STIMINTENSITYinMSO         = sort(unique(ioc.int),'ascend');    
-    SUB(idx_dataset).STIMINTENSITYinSTEPS       = [1:7]';    
+    SUB(idx_dataset).STIMINTENSITYinSTEPS       = (1:7)';    
     
 end    
 save([folder.results.stats,'ioc_data.mat'],'SUB')
@@ -60,11 +60,12 @@ for i_d = 1:length(FieldList)
         
         if strcmpi(Label.ioc_Field{i_d},'TimeCourse'),
             TestResults  = utils.TimeCourse2statistics(DATA,DESIGN,SUBID,STIM);
+            save(savefile,'TestResults');   
         else
             [TestResults,ClusterResults] = utils.iocdata2statistics(DATA,DESIGN,SUBID,STIM);     
+            save(savefile,'TestResults','ClusterResults');   
         end
-         
-        save(savefile,'TestResults','ClusterResults');   
+
         notify_me([log_betreff,'Finished'],utils.measure_ProcessingTime(ProcessingTime));
     end
 end

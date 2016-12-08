@@ -9,7 +9,7 @@ V           = utils.vec2mesh(V);
 Grid        = utils.get_DesignGrid;
 X           = utils.vec2mesh(Grid(:,1));
 Y           = utils.vec2mesh(Grid(:,2));
-Z           = utils.vec2mesh(Grid(:,3));
+% Z           = utils.vec2mesh(Grid(:,3));
 
 % Bind Value to upper/lower bounds 
 
@@ -31,9 +31,9 @@ Y           = Yq;
 % Plotting data
 figure
 hold on
-h_c = contour(X,Y,iBV,linspace(-CLIM,CLIM,40),'fill','on');
+contour(X,Y,iBV,linspace(-CLIM,CLIM,40),'fill','on');
 if any(any(abs(iV)>1.30))       
-    h_s = contour(X,Y,abs(iV),[0 1.301],'fill','off','linecolor',[.5 .5 .5],'linewidth',2);        
+    contour(X,Y,abs(iV),[0 1.301],'fill','off','linecolor',[.5 .5 .5],'linewidth',2);        
 end
 
 caxis([-CLIM CLIM])

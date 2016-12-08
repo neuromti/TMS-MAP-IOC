@@ -92,8 +92,7 @@ end
 % @params raw unflipped meshgrid
 % @returns flipped Y-coordinates
 function y = flipEven(y)
-    
-y = y;
+
 for ix = 1:size(y,2)
     if ~mod(ix,2) % if even
         y(:,ix)  = flipud(y(:,ix));

@@ -1,9 +1,11 @@
 %% Configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
+utils.cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder');
 %% Loading data
+profile on -timer 'performance'
+
 % List the .mat files int the data directory
 D           = dir([folder.data.map,'\*.mat']);
 
@@ -51,6 +53,10 @@ GRD = GRD(sort_idx);
 % Save the processed data
 save([folder.results.stats,'map_subject_data.mat'],'SUB')
 save([folder.results.stats,'map_gridded.mat'],'GRD')
+
+profile off
+profile viewer
+
 %% STATISTICAL ANALYSIS
 % GROUP PARAMETERS
 clc, clear, close all
@@ -61,9 +67,8 @@ load([folder.results.stats,'map_gridded.mat'],'GRD')
 DESIGN          = cat(1,SUB.DesignMatrix);
 SUBID           = cat(1,SUB.subID);
 
-delete(gcp('nocreate'));
-parpool(3)
-parfor i_d = 1:length(length(Label.Dataset(1:3)))
+
+for i_d = 1:length(length(Label.Dataset(1:3)))
     % Where to save the files
     savefile                    = [folder.results.stats,Label.Dataset{i_d},'\stats.mat'];
     if ~exist(fileparts(savefile),'dir'), mkdir(fileparts(savefile)); end
@@ -79,10 +84,9 @@ parfor i_d = 1:length(length(Label.Dataset(1:3)))
         [TestResults,ClusterResults] = utils.mappingdata2statistics(DATA,SUBID,DESIGN);     
         save(savefile,'TestResults','ClusterResults');      
         notify_me([log_betreff,'Finished'],utils.measure_ProcessingTime(ProcessingTime));
-
     end
 end
-delete(gcp('nocreate'));
+
 %% VISUALIZATION
 addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
 cmap = diverging_bwr_40_95_c42_n256;

@@ -68,8 +68,8 @@ for i_pos=1:size(DATA,1),
    
   %  utils.progressBar(['Permutation GridPoint ',num2str(i_pos),' [.']);    
     for rep=1:NUM_REP,         
-        utils.progressBar(rep);
-  %      PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
+  %     utils.progressBar(rep);
+        PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
         [Pval,StatVal,MargMeans,Coeffs]     = get_StatisticalValues(PermutationData,DESIGN_MATRIX);          
         Perm(i_pos).Pval(:,rep)             = Pval;        
         Perm(i_pos).Sval(:,rep)             = StatVal;
@@ -108,7 +108,7 @@ for i_pos=1:size(DATA,1),
     Boot(i_pos).CoeffsCI    = cat(2,quantile(Boot(i_pos).Coeffs,ALPHA_ERROR./2,2),quantile(Boot(i_pos).Coeffs,(1-ALPHA_ERROR./2),2));      
 end
 TestResults.Power       = single(cat(2,Boot.Power));
-TestResults.CoeffsCI    = single(cat(3,Boot.CoeffsCI));
+TestResults.CI          = single(cat(3,Boot.CoeffsCI));
 end
 %% ------------------------------------------------------------------------
 % PERMUTATION BASED CLUSTER ANALYSIS 

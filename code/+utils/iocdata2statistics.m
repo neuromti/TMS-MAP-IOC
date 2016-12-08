@@ -23,7 +23,7 @@ end
 %% ------------------------------------------------------------------------
 % PERFORMING TRUE ANALYSIS
 % -------------------------------------------------------------------------
-
+Test = struct();
 for i_stim=1:NUM_STIM
     StimData                        = DATA(STIM==i_stim,:);
     StimDesign                      = DESIGN_MATRIX(STIM==i_stim,:);
@@ -41,6 +41,9 @@ Test_MargMeans = cat(2,Test.MargMeans)';
 TestResults              = struct('Pval',Test_Pval,'Sval',Test_Sval,'Coeffs',Test_Coeffs,'MargMeans',Test_MargMeans);
 
 if CLUS_flag,
+Test_ClusVal    = {};
+Test_ClusSize   = {};
+Test_ClusIdx    = {};
 for k=1:size(Test_Sval,2),    
     Hgrid                       = Test_Pval(:,k)<ALPHA_ERROR;
     Sgrid                       = Test_Sval(:,k);    
@@ -116,7 +119,7 @@ for i_stim=1:NUM_STIM,
     Boot(i_stim).CoeffsCI    = cat(2,quantile(Boot(i_stim).MargMeans,ALPHA_ERROR./2,2),quantile(Boot(i_stim).MargMeans,(1-ALPHA_ERROR./2),2));      
 end
 TestResults.Power       = single(cat(2,Boot.Power))';
-TestResults.CoeffsCI    = permute(single(cat(3,Boot.CoeffsCI)),[3,1,2]);
+TestResults.CI          = permute(single(cat(3,Boot.CoeffsCI)),[3,1,2]);
 end
 
 

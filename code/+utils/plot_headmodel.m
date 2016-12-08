@@ -14,7 +14,7 @@ view(viewpoint)
 [vx,vy,vz] = sph2cart(-90,90,128);
 lightpos    =  [vx,vy,vz];
 zoom(1.40)
-h_l = light('Position',lightpos,'style','infinite');
+light('Position',lightpos,'style','infinite');
 material dull       	
 lighting gouraud
 
