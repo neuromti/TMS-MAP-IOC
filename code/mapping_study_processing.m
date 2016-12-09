@@ -67,8 +67,7 @@ load([folder.results.stats,'map_gridded.mat'],'GRD')
 DESIGN          = cat(1,SUB.DesignMatrix);
 SUBID           = cat(1,SUB.subID);
 
-
-for i_d = 1:length(length(Label.Dataset(1:3)))
+for i_d = 1:length(Label.Dataset(1:3))
     % Where to save the files
     savefile                    = [folder.results.stats,Label.Dataset{i_d},'\stats.mat'];
     if ~exist(fileparts(savefile),'dir'), mkdir(fileparts(savefile)); end
@@ -87,76 +86,5 @@ for i_d = 1:length(length(Label.Dataset(1:3)))
     end
 end
 
-%% VISUALIZATION
-addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
-cmap = diverging_bwr_40_95_c42_n256;
-set(groot,'DefaultFigureColormap',cmap)
-clc
 
-% Show Effects of Factors on the different measures on the grid 
-% and project them on a headmodel
-delete([folder.results.figs,Label.Weight{1},'\*.tif'])
-delete([folder.results.figs,Label.Weight{2},'\*.tif'])
 
-for i_d = 1:length(Label.Dataset(1:3))
-    load([folder.results.stats,'\',Label.Dataset{i_d},'\stats.mat']);            
-    i_field     = find(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)));
-    i_weight    = find(ismember({'qu','th'},Label.Dataset{i_d}(1:2)));
-  
-    close all
-    
-    for k=1:size(TestResults.Pval,2)        
-
-        PlotLabel   = [Label.Title{k},' ->',Label.Field{i_field}];
-         
-        P           = -log10(TestResults.PermutationPval(:,k));
-        S           = sign(TestResults.Coeffs(:,k));
-        V           = P.*S;
-        
-        utils.plot_gridmodel(V,2)
-        title(PlotLabel)             
-        print(gcf,[folder.results.figs,Label.Weight{i_weight},'\GRID_',Label.Save{k},'-',Label.Field{i_field},'.tif'],'-dtiff')        
-        
-        utils.plot_headmodel(headmodel,V,2)
-        annotation('textbox','Position',[0 0 1 1],'String',PlotLabel)
-        print(gcf,[folder.results.figs,Label.Weight{i_weight},'\HEAD_',Label.Save{k},'-',Label.Field{i_field},'.tif'],'-dtiff')
-
-        if ~isempty(ClusterResults(k).PermPval)
-            for clus_idx = 1:length(ClusterResults(k).PermPval),
-                Grid    = utils.get_DesignGrid;
-                sel     = utils.mesh2vec(ClusterResults(k).MemberShip(:,:,1)==clus_idx);
-                xyz     = double(Grid(sel,:));
-                V       = utils.Target2Grid(xyz);
-
-                %utils.plot_headmodel(headmodel,V,1)
-                ClusterAddendum     = sprintf('(Cluster %i: p=%.2g )',clus_idx,ClusterResults(k).PermPval(clus_idx));
-                ClusterLabel        = [PlotLabel,' ',ClusterAddendum];
-
-                utils.plot_gridmodel(V,2)
-                title(ClusterLabel)   
-                colorbar off
-                print(gcf,[folder.results.figs,Label.Weight{i_weight},'\CLUSTER_GRID_',Label.Save{k},'-',Label.Field{i_field},'-',num2str(clus_idx),'.tif'],'-dtiff')
-
-                utils.plot_headmodel(headmodel,V,2)
-                annotation('textbox','Position',[0 0 1 1],'String',ClusterLabel)
-                print(gcf,[folder.results.figs,Label.Weight{i_weight},'\CLUSTER_HEAD_',Label.Save{k},'-',Label.Field{i_field},'-',num2str(clus_idx),'.tif'],'-dtiff')
-
-            end                
-        end
-    end
-    
-    
-end
-
-% Plot Position of Anterior Target
-close all
-ANT         = utils.get_GroupAnt(SUB);
-V           = utils.Target2Grid(ANT);
-utils.plot_headmodel(headmodel,V,1)
-annotation('textbox','Position',[0 0 1 1],'String','Distribution of Anterior Target')
-print(gcf,[folder.results.figs,'\HEAD_PDF_Anterior_Target.tif'],'-dtiff')
-
-utils.plot_gridmodel(V,2)
-title('Distribution of Anterior Target')
-print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target.tif'],'-dtiff')
-%

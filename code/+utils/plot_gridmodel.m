@@ -55,7 +55,6 @@ plot3(ANT(:,1),ANT(:,2),ANT(:,3),'ko','markerfacecolor','b')
 end
 
 function [ytick,yticklab] = make_yticks(CLIM)
-
     ytick                       = [-CLIM:-2,-1.301,0,1.301,2:CLIM];
     yticklab                    = {};
     for i_yt = 1:length(ytick)

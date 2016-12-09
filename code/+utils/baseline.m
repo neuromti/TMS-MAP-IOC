@@ -1,17 +1,21 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [output] = baseline(input,window)
-% 
-% 1 = difference relative to baseline +- magnitude
-% 2 = percent relative to baseline +-%
-% 3 = std relative to baseline +-
-% 4 = ratio relative to baseline [0 Inf]
-% written by Robert Bauer for CIN AG NPT 27.04.2011
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%> @function 
+%> output = baseline(input,window)
+%> @param 
+%> window    vector index for baseline period
+%> input    raw data
+%> mode     how baseline shallp be performed,
+%> 1 = difference relative to baseline +- magnitude
+%> 2 = percent relative to baseline +-%
+%> 3 = std relative to baseline +-
+%> 4 = ratio relative to baseline [0 Inf]
+%> @return
+%> output is the input baselined according
+%>  written by Robert Bauer for CIN AG NPT 27.04.2011
 
 function [output] = baseline(input,baselinerange,mode)
 
 if isempty(baselinerange), 
-    %warning('No Baseline specified'); 
+    warning('No Baseline specified'); 
     output = input;
     return;
 end
@@ -21,8 +25,6 @@ if nargin <3, mode = 1;  end;
 if size(input,2) < max(baselinerange), input = input'; end
 output = zeros(size(input));
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if mode ==1,
     output = input - repmat(nanmean(input(:,baselinerange),2),1,size(input,2));
 elseif mode==2,

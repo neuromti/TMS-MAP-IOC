@@ -1,12 +1,12 @@
 %% Input-Output-Curve Analysis
 % configuration
-addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-utils.cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
-addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
+addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code');
+utils.cls; %clc, clear all, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','setup','folder','Label');
+addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
+
 %% loading data
 D           = dir([folder.data.ioc,'*.mat']);
-
 clc
 % Preparing data structure
 SUB         = struct('AmplitudeAcrossIntensity',[],'MepAcrossIntensity',[],'LatencyAcrossIntensity',[],'WaveformAcrossIntensity',[],'SUBID',[],'CONDITION',[]);

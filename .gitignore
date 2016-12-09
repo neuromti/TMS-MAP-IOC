@@ -1,6 +1,8 @@
 BACKUP/
 data/
 zwischen/
+code/codereview/
+code/docs/
 code/scraps/
 code/*.mat
 *.asv
