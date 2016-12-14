@@ -161,19 +161,8 @@ for i_d = 1:3
     fig_LABEL   = [{'Bi 45° | Mono 90° on M1'},{'Bi 45° | Mono 90° on NPMA'},Label.ioc_Field{i_d}];
     utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
 
-
-    
-    
     
 end
-%%
-
-for M1setting =1:8,
-    for NPMAsetting =1:8,
-    end
-end
-%%
-
 %%
     fig_DESIGN  = cat(1,ismember(setup.IO.label.all,{'Bi l-m M1','Mo pl-am M1'}),ismember(setup.IO.label.all,{'Bi pl-am M1','Mo l-m M1'}));
     fig_LABEL   = [{['Bi 90°',' & ','Mo 45 °']},{['Bi 45°',' & ','Mo 90°']},{[Label.ioc_Field{i_d}, ' M1']}];
@@ -186,15 +175,5 @@ end
     fig_DESIGN  = cat(1,(~setup.IO.BI & setup.IO.M1),(~setup.IO.BI & ~setup.IO.M1));
     fig_LABEL   = [{'M1'},{'NPMA'},{['Monophasic ',Label.ioc_Field{i_d}]}];
     utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-         
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-end
+
+     
