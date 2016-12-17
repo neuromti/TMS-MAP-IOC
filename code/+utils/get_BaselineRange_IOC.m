@@ -5,8 +5,8 @@ function BaseLineRange= get_BaselineRange_IOC(unit_type)
     end
     
     
-    WindowOfInterest    = utils.get_WindowOfInterest_IOC('sample');    
-    BaseLineRange       = 100+[(5*5),(17*5)]; %5kHz Fs!
+    WindowOfInterest    = utils.get_WindowOfInterest_IOC('sample');     %  5    60
+    BaseLineRange       = 100+[(5*5),(17*5)]; %5kHz Fs!  5    17
         
     if regexpi(unit_type,'sample')
         BaseLineRange       = [(1+BaseLineRange(1)-WindowOfInterest(1)),BaseLineRange(2)-WindowOfInterest(1)];

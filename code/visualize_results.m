@@ -6,6 +6,14 @@ load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','head
 addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
 cmap = diverging_bwr_40_95_c42_n256;
 set(groot,'DefaultFigureColormap',cmap)
+%% SUB parameters
+load('map_subject_data.mat')
+SUBID = cat(1,SUB.subID);
+sum(grpstats(cat(1,SUB.sex),SUBID))
+mean(grpstats(cat(1,SUB.age),SUBID))
+std(grpstats(cat(1,SUB.age),SUBID))
+min(grpstats(cat(1,SUB.age),SUBID))
+max(grpstats(cat(1,SUB.age),SUBID))
 
 %% VISUALIZATION OF MAPPING RESULTS
 % Show Influence of Factors on the different measure

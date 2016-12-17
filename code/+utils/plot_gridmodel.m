@@ -46,12 +46,16 @@ hnd_cb                      = colorbar;
 set(hnd_cb,'YLIM',[-CLIM CLIM],'YTICK',ytick,'YTICKLABEL',yticklab)
 
 % Plot Position of HotSpot according to Design (1 cm posterior to Grid Origin
-hold on
-HS          = utils.get_DesignGridOrigin+[0,-10,0];
-plot3(HS(:,1),HS(:,2),HS(:,3),'ko','markerfacecolor','r')
+target_flat = false;
+if target_flat
+    hold on
+    HS          = utils.get_DesignGridOrigin+[0,-10,0];
+    plot3(HS(:,1),HS(:,2),HS(:,3),'ko','markerfacecolor','r')
 
-ANT         = utils.get_GroupAnt();
-plot3(ANT(:,1),ANT(:,2),ANT(:,3),'ko','markerfacecolor','b')
+    ANT         = utils.get_GroupAnt();
+    plot3(ANT(:,1),ANT(:,2),ANT(:,3),'ko','markerfacecolor','b')
+end
+
 end
 
 function [ytick,yticklab] = make_yticks(CLIM)

@@ -1,6 +1,6 @@
 %% Configuration
 addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-utils.cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
+cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
 addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder');
 %% Loading data
@@ -17,7 +17,8 @@ logfilename = [folder.code,'Logfile.log'];
 logfileid   = fopen(logfilename,'wt');
 fprintf(logfileid,'started script on %s \n',datetime('now'));
 utils.progressBar('[')
-for idx_dataset = 1:length(D),    
+
+for idx_dataset = 1:length(D)    
     % Load dataset
     filename    = D(idx_dataset).name;
     load([folder.data.map,filename]);     
