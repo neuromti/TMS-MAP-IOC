@@ -15,4 +15,6 @@
 
 - code/+utils/ (Contains several utility functions are organized as MatLab package in the +utils folder)
 
-- drafts/ (Contains drafts of the manuscript)
+- drafts/ (Contains drafts of the <manuscript>))
+
+[manuscript]: (draft/draft.md)

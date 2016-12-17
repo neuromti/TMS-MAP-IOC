@@ -14,7 +14,18 @@ mean(grpstats(cat(1,SUB.age),SUBID))
 std(grpstats(cat(1,SUB.age),SUBID))
 min(grpstats(cat(1,SUB.age),SUBID))
 max(grpstats(cat(1,SUB.age),SUBID))
-
+%% M1 Estimation
+a               = (grpstats(cat(1,SUB.GridOrigin),SUBID))+[0,-10,0]; %grid origin is 10mm anterior to HotSpot
+[h,p,ci,stats]  = ttest(a-utils.get_M1())
+%% Get Mean and SD of RMT used for Mapping
+[num,str,all]   = xlsread('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\subject_data.xlsx',2);
+% remember: mapping was performed at 110% of RMT
+clc
+close force all
+DATA = num(:,1);
+DSGN = cat(2,repmat([1,1,0,0],1,13)',repmat([1,0,1,0],1,13)',reshape(repmat(1:13,4,1),1,[])'); %BI vs MO, LM vs PLAM, SUB
+[p,tab,stats]   = anovan(DATA,DSGN,'random',3,'model',[1 0 0;0 1 0;1 1 0;0 0 1],'display','off','Varnames',{'Biphasic','90°','Subject'});
+cat(2,unique(all(:,4)),num2cell(grpstats(num(:,1),all(:,4),'mean')),num2cell(grpstats(num(:,1),all(:,4),'std')))
 %% VISUALIZATION OF MAPPING RESULTS
 % Show Influence of Factors on the different measure
 % Visualize them on the grid and project them on a headmodel
