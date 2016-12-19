@@ -1,13 +1,19 @@
 %% Configuration
-addpath('C:\Users\Robert Bauer\Documents\Matlab\private_toolbox');
-utils.cls; %clc, clear, close all, matlabrc, fclose('all'), addpath of Fieldtrip and other toolboxes, ft_defaults
-addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %to access the package folder +utils
-load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder','Label');
+matlabrc;
+status = fclose('all');
+close all;
+clear;
+clc;
+
+addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code'); %study package +utils
 addpath('C:\Users\Robert Bauer\Documents\MATLAB\other_toolboxes\CETperceptual_MATLAB'); %folder with colormaps
-cmap = diverging_bwr_40_95_c42_n256;
-set(groot,'DefaultFigureColormap',cmap)
+addpath ('C:\Users\Robert Bauer\Documents\Matlab\other_toolboxes\fieldtrip');
+ft_defaults;
+
+load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder','Label');
+set(groot,'DefaultFigureColormap',diverging_bwr_40_95_c42_n256())
 %% SUB parameters
-load('map_subject_data.mat')
+load([cd,'\results\stats\map_subject_data.mat'])
 SUBID = cat(1,SUB.subID);
 sum(grpstats(cat(1,SUB.sex),SUBID))
 mean(grpstats(cat(1,SUB.age),SUBID))
@@ -65,7 +71,7 @@ for i_d = 1:length(Label.Dataset(1:3))
     end
        
 end
-
+close all
 %% Plot Cluster Results of the cubic interpolation datasets for all three measures
 % of interest (i.e. ('Amplitude' ; 'MEP' ; 'Latency')
 for i_d = 1:length(Label.Dataset(1:3))
