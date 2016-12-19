@@ -74,12 +74,13 @@ end
 close all
 %% Plot Cluster Results of the cubic interpolation datasets for all three measures
 % of interest (i.e. ('Amplitude' ; 'MEP' ; 'Latency')
+
+COG             = {'Factor','Cluster ID','x','y','Area','Spread','PermPVal'}
 for i_d = 1:length(Label.Dataset(1:3))
     load([folder.results.stats,Label.Dataset{i_d},'\stats.mat']);            
     i_field     = find(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)));
     i_weight    = find(ismember({'qu','th'},Label.Dataset{i_d}(1:2)));
-  
-    close all    
+    close all     
     % for all modeled factors of interest (i.e. 'Biphasic > Monophasic' ; '90° > 45°' ; 'Biphasic 90° & Monophasic 45°' ; but not 'Subject')
     for k=1:size(TestResults.Pval,2)   
         PlotLabel   = [Label.Title{k},' ->',Label.Field{i_field}];         
@@ -89,6 +90,9 @@ for i_d = 1:length(Label.Dataset(1:3))
                 % Prepare data for plotting
                 ClusterLabel    = [PlotLabel,' ',sprintf('(Cluster %i: p=%.2g )',clus_idx,ClusterResults(k).PermPval(clus_idx))];
                 ClusterMember   = ClusterResults(k).MemberShip(:,:,1)==clus_idx;
+                [CoG,Spread,Area]      = utils.get_TopographicalParameters(ClusterMember);
+                COG             = cat(1,COG,{PlotLabel,['Cluster #',num2str(k)],CoG(1),CoG(2),Area,Spread,ClusterResults(k).PermPval(clus_idx)});
+                
                 V               = utils.Clustermember2grid(ClusterMember);
                 
                 % Plot on Grid using the Design Grid
@@ -106,20 +110,54 @@ for i_d = 1:length(Label.Dataset(1:3))
         end
     end
 end
+if exist([folder.results.stats,'cluster_topo.xlsx'],'file'), delete([folder.results.stats,'cluster_topo.xlsx']); end
+xlswrite([folder.results.stats,'cluster_topo.xlsx'],COG);
+close all
 
 %% Plot Position of Anterior Target
 close all
 load([folder.results.stats,'map_subject_data.mat'],'SUB')
+[xyz,names] = utils.get_landmark();
+
+% closest region is PMd, but still significant anterior to it. 
+P = []; CI = [];
+for k = 1 : length(names)   
+    [h,p,ci,stats] = ttest(ANT-xyz(k,:)); 
+    P = cat(1,P,p); 
+    CI = cat(3,CI,ci); 
+end
+table(names,P,squeeze(mean(CI,1))',squeeze(CI(1,:,:))',squeeze(CI(2,:,:))')
+
+
+LandMarkDistance = pdist2(xyz(:,1:2),ANT(:,1:2));
+figure
+hold on
+barh(mean(pdist2(xyz(:,1:2),ANT(:,1:2)),2),'w')
+for lm_i = 1 : length(names)
+    scatter(LandMarkDistance(lm_i,:),normrnd(lm_i,0.075,13,1),'ko','markerfacecolor','k')
+end
+set(gca,'YTICKLABEL',names,'YTICK',1 : length(names),'YLIM',[0 length(names)+1])
+xlabel('Distance in mm')
+colormap([.5 0 0])
+print(gcf,[folder.results.figs,'\Landmark_to_Anterior_Target.tif'],'-dtiff')
+%%
+
 ANT         = utils.get_GroupAnt(SUB);
 V           = utils.Target2Grid(ANT);
 utils.plot_headmodel(headmodel,V,1)
 annotation('textbox','Position',[0 0 1 1],'String','Distribution of Anterior Target')
 print(gcf,[folder.results.figs,'\HEAD_PDF_Anterior_Target.tif'],'-dtiff')
 
+
+
 utils.plot_gridmodel(V,2)
 title('Distribution of Anterior Target')
+hnd_cb                      = colorbar;
+set(hnd_cb,'YLIM',[0 1],'YTICK',[0:0.2:1],'YTICKLABEL',round(linspace(0,max(V)./sum(V),6)*1000)./1000)
 print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target.tif'],'-dtiff')
 
+utils.plot_landmark2grid();
+print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target_w_landmarks.tif'],'-dtiff')
 %% 
 
 % Visualize IOC for parameters (i.e. 'Amplitude' ; 'MEP' ; 'Latency')

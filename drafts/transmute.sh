@@ -1,0 +1,1 @@
+pandoc -f docx -t markdown draft.docx -o draft.md

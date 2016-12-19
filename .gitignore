@@ -1,11 +1,13 @@
 BACKUP/
 data/
 zwischen/
+results/*/*
 code/scraps/
-code/*.mat
+results/*/*
 *.asv
 *.mat
-*.tif
+*.xlsx
+
 
 #################
 ## Eclipse
