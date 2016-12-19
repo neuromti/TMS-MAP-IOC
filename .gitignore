@@ -5,7 +5,7 @@ code/scraps/
 code/*.mat
 *.asv
 *.mat
-*.tif
+results/*/*
 
 #################
 ## Eclipse

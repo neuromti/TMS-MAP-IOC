@@ -1,4 +1,4 @@
-function xyz = get_DesignGrid()
+function xyz = get_DesignGrid(selection)
 
 % Define Grid based on planned grid-points
 % Step distance on rectangular grid therefore 3.5355 
@@ -20,5 +20,15 @@ Y                   = Y+xyz(2);
 Z                   = Z+xyz(3);
 do_structure        = @(x)reshape(x,1,[])';
 xyz                 = cat(2,do_structure(X),do_structure(Y),do_structure(Z));
+
+if nargin == 1
+    if islogical(selection) && length(selection) == length(xyz)
+    xyz = xyz(selection,:);
+    else
+        error('Selection Vector not correctly specified');
+    end
+else
+    
+end
 
 end
