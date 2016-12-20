@@ -7,6 +7,8 @@ results/*/*
 *.asv
 *.mat
 *.xlsx
+*.pptx
+*.docx
 
 
 
