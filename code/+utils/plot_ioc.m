@@ -14,6 +14,7 @@ function plot_ioc(MargMeans,CI,sel_DESIGN,Labels,Pval)
     
     % Plot
     figure
+    set(gcf,'Position',[100,100,800,450],'paperpositionmode','auto')
     hold on
     
     PosVal  = cat(2,mean(MargMeans(:,sel_DESIGN(1,:)),2),mean(MargMeans(:,sel_DESIGN(2,:)),2));

@@ -118,7 +118,7 @@ close all
 close all
 load([folder.results.stats,'map_subject_data.mat'],'SUB')
 [xyz,names] = utils.get_landmark();
-
+ANT         = utils.get_GroupAnt(SUB);
 % closest region is PMd, but still significant anterior to it. 
 P = []; CI = [];
 for k = 1 : length(names)   
@@ -171,12 +171,32 @@ for i_d = [1,3]
         fig_LABEL   = [[unique(DESIGN_labels(design_idx,DESIGN(design_idx,:),:)),unique(DESIGN_labels(design_idx,~DESIGN(design_idx,:),:))],Label.ioc_Field{i_d}];
         Pval        = TestResults.PermutationPval(:,design_idx);
         utils.plot_ioc(TestResults.MargMeans,TestResults.CI,fig_DESIGN,fig_LABEL,Pval);
-        set(gcf,'Position',[100,100,800,450],'paperpositionmode','auto')
         print(gcf,[folder.results.figs,'IOC\',sprintf('%s_%s_%s',fig_LABEL{:}),'.tif'],'-dtiff')
     end
 
 end
-%%
+%% TIMECOURSE
+loadfile            = [folder.results.stats,'ioc\',Label.ioc_Field{4},'_stats.mat'];   
+load(loadfile,'TestResults');     
+if exist([folder.results.figs,'TC\']),delete([folder.results.figs,'TC\*.*']), else mkdir([folder.results.figs,'TC\']); end
+
+MargMeans   = (cat(3,TestResults.MargMeans));
+Pval        = (cat(3,TestResults.PermutationPval));
+
+for design_idx =1:3
+    fig_DESIGN  = cat(1,DESIGN(design_idx,:),~DESIGN(design_idx,:));
+    fig_LABEL   = [[unique(DESIGN_labels(design_idx,DESIGN(design_idx,:),:)),unique(DESIGN_labels(design_idx,~DESIGN(design_idx,:),:))],Label.ioc_Field{i_d}];
+    
+    close all
+  	[h] = utils.plot_timecourse(MargMeans,fig_DESIGN,fig_LABEL,squeeze(Pval(:,design_idx,:)));
+    for f=1:length(h)
+        print(h(f),[folder.results.figs,'TC\',sprintf('%s_%s_%s_%i',fig_LABEL{1:2},'TC',f),'.tif'],'-dtiff')
+    end
+    
+end
+
+
+
 
 
      
