@@ -134,8 +134,7 @@ Perm_Sval = permute(cat(3,Perm.Sval),[3,1,2]);
 for k = 1 : length(ClusterResults)
     TestClusterNum              = length(ClusterResults(k).Sval);    
     AbsTestClustVal             = abs(ClusterResults(k).Sval);
-    [~,StrengthOrder]           = sort(ClusterResults(k).Sval,'descend');
-     
+      
     if TestClusterNum==0    
         ClusterResults(k).PermPval = [];
         disp(['Cluster Analysis Factor ',num2str(k),' is Empty!']);    
@@ -162,11 +161,11 @@ for k = 1 : length(ClusterResults)
                 continue; 
             end
 
-            % Compare against highest value, unless this value was already beaten
+           % Compare against highest value
             PickPermCluster = 1;
             for PickTestCluster = 1 : TestClusterNum
-                IsSignificantbyChance(StrengthOrder(PickTestCluster)) = AbsPermClusVal(PickPermCluster) > AbsTestClustVal(StrengthOrder(PickTestCluster));
-                if AbsPermClusVal(PickPermCluster) > AbsTestClustVal(StrengthOrder(PickTestCluster))
+                IsSignificantbyChance(PickTestCluster) = AbsPermClusVal(PickPermCluster) > AbsTestClustVal(PickTestCluster);
+                if AbsPermClusVal(PickPermCluster) > AbsTestClustVal(PickTestCluster)
                     PickPermCluster = min(PickPermCluster+1,length(AbsPermClusVal));
                 end
             end
