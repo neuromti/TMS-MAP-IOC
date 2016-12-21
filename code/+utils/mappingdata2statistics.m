@@ -113,15 +113,14 @@ end
 %% ------------------------------------------------------------------------
 % PERMUTATION BASED CLUSTER ANALYSIS 
 % -------------------------------------------------------------------------
-if CLUS_flag,
+if CLUS_flag == true
     
 Perm_Pval = permute(cat(3,Perm.Pval),[3,1,2]);
 Perm_Sval = permute(cat(3,Perm.Sval),[3,1,2]);
-for k=1:length(ClusterResults)
+for k = 1 : length(ClusterResults)
     TestClusterNum              = length(ClusterResults(k).Sval);    
     AbsTestClustVal             = abs(ClusterResults(k).Sval);
-    
-    if TestClusterNum==0,    
+    if TestClusterNum == 0    
         ClusterResults(k).PermPval = [];
         disp(['Cluster Analysis Factor ',num2str(k),' is Empty!']);    
         continue; 
@@ -132,7 +131,7 @@ for k=1:length(ClusterResults)
         SigCounts                   = true(NUM_REP,TestClusterNum);
             
   %      utils.progressBar(['Cluster Analysis Factor ',num2str(k),' [.']);    
-        for rep=1:NUM_REP,    
+        for rep = 1 : NUM_REP  
   %         utils.progressBar(rep);
             
             Hgrid               = utils.vec2mesh(Perm_Pval(:,k,rep)<ALPHA_ERROR);
@@ -141,16 +140,19 @@ for k=1:length(ClusterResults)
             AbsPermClusVal   = sort(abs(PermClusVal));                        
             IsSignificantbyChance = true(1,TestClusterNum);
             
-            if isempty(PermClusVal),
+            if isempty(PermClusVal)
                 IsSignificantbyChance   = false(1,TestClusterNum);
                 SigCounts(rep,:)        = IsSignificantbyChance;  
                 continue; 
             end
-            
-            
-            
-            for PickTestCluster=1:TestClusterNum
-                IsSignificantbyChance(PickTestCluster) = AbsPermClusVal(1)>AbsTestClustVal(PickTestCluster);
+
+            % Compare against highest value
+            PickPermCluster = 1;
+            for PickTestCluster = 1 : TestClusterNum
+                IsSignificantbyChance(PickTestCluster) = AbsPermClusVal(PickPermCluster) > AbsTestClustVal(PickTestCluster);
+                if AbsPermClusVal(PickPermCluster) > AbsTestClustVal(PickTestCluster)
+                    PickPermCluster = min(PickPermCluster+1,length(AbsPermClusVal));
+                end
             end
             SigCounts(rep,:)    = IsSignificantbyChance;              
         end   

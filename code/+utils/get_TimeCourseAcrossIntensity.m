@@ -23,14 +23,17 @@ function TimeCourseAcrossIntensity = get_TimeCourseAcrossIntensity(ioc)
     TimeCourseAcrossIntensity = squeeze(nanmean(WaveformAsMatrix,2));
     
     % Smoothen / Gaussian Filter 
-    GaussWinSize    = [2,10];
-    filt            = gausswin(GaussWinSize(1))*gausswin(GaussWinSize(2))';
-    filt            = filt./sum(sum(filt));
-    tmp             = padarray(padarray(TimeCourseAcrossIntensity,[0,GaussWinSize(2)./2],'replicate'),[GaussWinSize(1)./2,0]);
-    output          = convn(tmp,filt,'same');
-    output          = output(1+(GaussWinSize(1)/2):end-GaussWinSize(1)/2,1+(GaussWinSize(2)/2):end-GaussWinSize(2)/2);
-    TimeCourseAcrossIntensity = output;
-    
+    filt_flag  = true;
+    if filt_flag == true
+        %disp('I smoothen the time course!')
+        GaussWinSize    = [2,10];
+        filt            = gausswin(GaussWinSize(1))*gausswin(GaussWinSize(2))';
+        filt            = filt./sum(sum(filt));
+        tmp             = padarray(padarray(TimeCourseAcrossIntensity,[0,GaussWinSize(2)./2],'replicate'),[GaussWinSize(1)./2,0],'replicate');
+        output          = convn(tmp,filt,'same');
+        output          = output(1+(GaussWinSize(1)/2):end-GaussWinSize(1)/2,1+(GaussWinSize(2)/2):end-GaussWinSize(2)/2);
+        TimeCourseAcrossIntensity = output;
+    end
 %     close all
 %     plot(WaveformAcrossIntensity')
     
