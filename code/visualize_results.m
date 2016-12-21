@@ -12,7 +12,8 @@ ft_defaults;
 
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder','Label');
 set(groot,'DefaultFigureColormap',diverging_bwr_40_95_c42_n256())
-%% SUB parameters
+
+%% SUB parameters 
 load([folder.results.stats,'map_subject_data.mat'])
 SUBID = cat(1,SUB.subID);
 sum(grpstats(cat(1,SUB.sex),SUBID))
@@ -20,6 +21,22 @@ mean(grpstats(cat(1,SUB.age),SUBID))
 std(grpstats(cat(1,SUB.age),SUBID))
 min(grpstats(cat(1,SUB.age),SUBID))
 max(grpstats(cat(1,SUB.age),SUBID))
+%% SUB parameters IOC
+load([folder.results.stats,'ioc_data.mat'],'SUB')
+SUBID = cat(2,SUB.SUBID);SUBID = SUBID(1,:);
+MSO = cat(2,SUB.STIMINTENSITYinMSO);
+data = MSO(2,:);
+[p,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'})
+[c,m,h,nms]             = multcompare(stats,'dim',[1],'display','on');
+
+data((MSO(end,:) == 100)) = NaN;
+[p,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'})
+[c,m,h,nms]             = multcompare(stats,'dim',[1],'display','on');
+
+CND = cat(1,SUB.CONDITION);
+grpstats(MSO',mod(CND+1,2))
+grpstats(MSO',mod(CND+1,2),'max')
+grpstats(MSO',mod(CND+1,2),'min')
 %% M1 Estimation
 a               = (grpstats(cat(1,SUB.GridOrigin),SUBID))+[0,-10,0]; %grid origin is 10mm anterior to HotSpot
 [h,p,ci,stats]  = ttest(a-utils.get_M1())
