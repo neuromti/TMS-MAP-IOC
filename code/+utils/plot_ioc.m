@@ -3,7 +3,7 @@
 %> Plots patch for confidence intervals
 %> @params 
 
-function plot_ioc(TestResults,sel_DESIGN,Labels)
+function plot_ioc(MargMeans,CI,sel_DESIGN,Labels,Pval)
 
     % Assert Parameters are valid
     if ~islogical(sel_DESIGN), warning('Design Matrix not logical. Forcing Type Change'), sel_DESIGN = logical(sel_DESIGN); end
@@ -16,14 +16,15 @@ function plot_ioc(TestResults,sel_DESIGN,Labels)
     figure
     hold on
     
-    ave     = mean(TestResults.MargMeans(:,sel_DESIGN(1,:)),2);
-    ciup    = mean(TestResults.CI(:,sel_DESIGN(1,:),2),2);
-    cilo    = mean(TestResults.CI(:,sel_DESIGN(1,:),1),2);
+    PosVal  = cat(2,mean(MargMeans(:,sel_DESIGN(1,:)),2),mean(MargMeans(:,sel_DESIGN(2,:)),2));
+    ave     = mean(MargMeans(:,sel_DESIGN(1,:)),2);
+    ciup    = mean(CI(:,sel_DESIGN(1,:),2),2);
+    cilo    = mean(CI(:,sel_DESIGN(1,:),1),2);
     h_a1    = plot_single_ioc(ave,ciup,cilo,'r');
     
-    ave     = mean(TestResults.MargMeans(:,sel_DESIGN(2,:)),2);
-    ciup    = mean(TestResults.CI(:,sel_DESIGN(2,:),2),2);
-    cilo    = mean(TestResults.CI(:,sel_DESIGN(2,:),1),2);
+    ave     = mean(MargMeans(:,sel_DESIGN(2,:)),2);
+    ciup    = mean(CI(:,sel_DESIGN(2,:),2),2);
+    cilo    = mean(CI(:,sel_DESIGN(2,:),1),2);
     h_a2    = plot_single_ioc(ave,ciup,cilo,'b');
 
     % Annotate / Beautify    
@@ -38,13 +39,14 @@ function plot_ioc(TestResults,sel_DESIGN,Labels)
         set(gca,'YLIM',[0 1],'YTICK',0:0.1:1,'YTICKLABEL',0:.1:1)
     elseif any(regexpi(Labels{3},'Latency'))
         ylabel('Latency in ms')
-        set(gca,'YLIM',[24.5 28.5],'YTICK',25:1:28,'YTICKLABEL',25:1:28)
+        set(gca,'YLIM',[24.5 28.5],'YTICK',25:1:28,'YTICKLABEL',25:1:28)         
     else
         warning('No recognized unit of measure')            
     end
     
-    set(gca,'XLIM',[0.5 7.5],'XTICK',[1:7],'XTICKLABEL',90:10:150)
+    set(gca,'XLIM',[0.5 7.5],'XTICK',[1:7],'XTICKLABEL',90:10:150,'fontsize',14)
     xlabel('Stimulation Intensity in % RMT')
+    plot_sigstars(Pval,PosVal);
     
 end
 %%-------------------------------------------------------------------------
@@ -57,3 +59,26 @@ function [h_a,h_p] = plot_single_ioc(ave,ciup,cilo,fig_color)
     set(h_p,'Linewidth',1,'facecolor',fig_color,'facealpha',0.15,'edgealpha',0)
 end
 
+function plot_sigstars(Pval,PosVal)
+    SigIdx = Pval < utils.get_ALPHAERROR(length(Pval));
+    if any(SigIdx)
+        PlotIdx  = find(SigIdx);
+        if size(PosVal,1) == 1
+            plot(PlotIdx,PosVal,'k*','markerfacecolor','k','markersize',10);
+        elseif size(PosVal,1) == size(Pval,1)   
+            if size(PosVal,2) == 2
+                plot(PlotIdx,PosVal(PlotIdx,1),'linestyle','none','marker','o','markerfacecolor','r','markeredgecolor','r','markersize',10);
+                plot(PlotIdx,PosVal(PlotIdx,1),'ks','markerfacecolor','k','markersize',4);
+                plot(PlotIdx,PosVal(PlotIdx,2),'linestyle','none','marker','o','markerfacecolor','b','markeredgecolor','b','markersize',10);
+                plot(PlotIdx,PosVal(PlotIdx,2),'ks','markerfacecolor','k','markersize',4);                
+            elseif size(PosVal,2) == 1
+                plot(PlotIdx,PosVal(PlotIdx,1),'k*','markerfacecolor','k','markersize',10);
+                
+            else
+                warning('Wrong Dimensions')
+            end
+        else
+            warning('Wrong Dimensions')
+        end       
+    end        
+end

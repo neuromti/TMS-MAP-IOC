@@ -13,7 +13,7 @@ ft_defaults;
 load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\config.mat','gridmodel','headmodel','setup','folder','Label');
 set(groot,'DefaultFigureColormap',diverging_bwr_40_95_c42_n256())
 %% SUB parameters
-load([cd,'\results\stats\map_subject_data.mat'])
+load([folder.results.stats,'map_subject_data.mat'])
 SUBID = cat(1,SUB.subID);
 sum(grpstats(cat(1,SUB.sex),SUBID))
 mean(grpstats(cat(1,SUB.age),SUBID))
@@ -140,15 +140,12 @@ set(gca,'YTICKLABEL',names,'YTICK',1 : length(names),'YLIM',[0 length(names)+1])
 xlabel('Distance in mm')
 colormap([.5 0 0])
 print(gcf,[folder.results.figs,'\Landmark_to_Anterior_Target.tif'],'-dtiff')
-%%
-
+%
 ANT         = utils.get_GroupAnt(SUB);
 V           = utils.Target2Grid(ANT);
 utils.plot_headmodel(headmodel,V,1)
 annotation('textbox','Position',[0 0 1 1],'String','Distribution of Anterior Target')
 print(gcf,[folder.results.figs,'\HEAD_PDF_Anterior_Target.tif'],'-dtiff')
-
-
 
 utils.plot_gridmodel(V,2)
 title('Distribution of Anterior Target')
@@ -158,85 +155,28 @@ print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target.tif'],'-dtiff')
 
 utils.plot_landmark2grid();
 print(gcf,[folder.results.figs,'\GRID_PDF_Anterior_Target_w_landmarks.tif'],'-dtiff')
-%% 
-
-% Visualize IOC for parameters (i.e. 'Amplitude' ; 'MEP' ; 'Latency')
+%% Visualize IOC for parameters (i.e. 'Amplitude' ; 'MEP' ; 'Latency')
 labels_list = cat(1,setup.IO.label.BI,setup.IO.label.LM,setup.IO.label.M1);
 DESIGN      = logical(cat(1,setup.IO.BI,setup.IO.LM,setup.IO.M1));
 DESIGN_labels = cat(1,setup.IO.label.BI(~setup.IO.BI+1),setup.IO.label.LM(~setup.IO.LM+1),setup.IO.label.M1(~setup.IO.M1+1));
-for i_d = 1:3
+if exist([folder.results.figs,'IOC\']),delete([folder.results.figs,'IOC\*.*']), else mkdir([folder.results.figs,'IOC\']); end
+for i_d = [1,3]
   
     loadfile            = [folder.results.stats,'ioc\',Label.ioc_Field{i_d},'_stats.mat'];   
     load(loadfile,'TestResults','ClusterResults');     
     
     close all
-    for design_idx =1:3,
-
+    for design_idx =1:3
         fig_DESIGN  = cat(1,DESIGN(design_idx,:),~DESIGN(design_idx,:));
         fig_LABEL   = [[unique(DESIGN_labels(design_idx,DESIGN(design_idx,:),:)),unique(DESIGN_labels(design_idx,~DESIGN(design_idx,:),:))],Label.ioc_Field{i_d}];
-        utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
- 
-    end    
-    
-   % close all
-%     for design_idx =1:2,
-%         a           = DESIGN(design_idx,:) & setup.IO.M1;
-%         b           = ~DESIGN(design_idx,:) & setup.IO.M1;
-%         fig_DESIGN  = cat(1,a,b);
-%         trgt        = unique(cat(1,DESIGN_labels(3,a),DESIGN_labels(3,b)));
-%         fig_LABEL   = [unique(DESIGN_labels(design_idx,a)),unique(DESIGN_labels(design_idx,b)),{[trgt{1},' ',Label.ioc_Field{i_d}]}];
-%         utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-%         
-%         a           = DESIGN(design_idx,:) & ~setup.IO.M1;
-%         b           = ~DESIGN(design_idx,:) & ~setup.IO.M1;
-%         fig_DESIGN  = cat(1,a,b);
-%         trgt        = unique(cat(1,DESIGN_labels(3,a),DESIGN_labels(3,b)));
-%         fig_LABEL   = [unique(DESIGN_labels(design_idx,a)),unique(DESIGN_labels(design_idx,b)),{[trgt{1},' ',Label.ioc_Field{i_d}]}];
-%         utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-% 
-%     end   
-    
-%     % Interaction
-%     a           = ((setup.IO.BI & setup.IO.LM) | (~setup.IO.BI & ~setup.IO.LM)) & setup.IO.M1;
-%     b           = ((setup.IO.BI & ~setup.IO.LM) | (~setup.IO.BI & setup.IO.LM)) & setup.IO.M1;
-%     fig_DESIGN  = cat(1,a,b);
-%     trgt        = unique(cat(1,DESIGN_labels(3,a),DESIGN_labels(3,b)));
-%     fig_LABEL   = [{'Bi 90° | Mono 45°'},{'Bi 45° | Mono 90°'},{[trgt{1},' ',Label.ioc_Field{i_d}]}];
-%     utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-%     
-%     a           = ((setup.IO.BI & setup.IO.LM) | (~setup.IO.BI & ~setup.IO.LM)) & ~setup.IO.M1;
-%     b           = ((setup.IO.BI & ~setup.IO.LM) | (~setup.IO.BI & setup.IO.LM)) & ~setup.IO.M1;
-%     fig_DESIGN  = cat(1,a,b);
-%     trgt        = unique(cat(1,DESIGN_labels(3,a),DESIGN_labels(3,b)));
-%     fig_LABEL   = [{'Bi 90° | Mono 45°'},{'Bi 45° | Mono 90°'},{[trgt{1},' ',Label.ioc_Field{i_d}]}];
-%     utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-%     
-    % Full Model
-    a           = ((setup.IO.BI & setup.IO.LM) | (~setup.IO.BI & ~setup.IO.LM)) & setup.IO.M1;
-    b           = ((setup.IO.BI & setup.IO.LM) | (~setup.IO.BI & ~setup.IO.LM)) & ~setup.IO.M1;
-    fig_DESIGN  = cat(1,a,b);
-    fig_LABEL   = [{'Bi 90° | Mono 45° on M1'},{'Bi 90° | Mono 45° on NPMA'},Label.ioc_Field{i_d}];
-    utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-        
-    a           = ((setup.IO.BI & ~setup.IO.LM) | (~setup.IO.BI & setup.IO.LM)) & setup.IO.M1;    
-    b           = ((setup.IO.BI & ~setup.IO.LM) | (~setup.IO.BI & setup.IO.LM)) & ~setup.IO.M1;
-    fig_DESIGN  = cat(1,a,b);
-    fig_LABEL   = [{'Bi 45° | Mono 90° on M1'},{'Bi 45° | Mono 90° on NPMA'},Label.ioc_Field{i_d}];
-    utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
+        Pval        = TestResults.PermutationPval(:,design_idx);
+        utils.plot_ioc(TestResults.MargMeans,TestResults.CI,fig_DESIGN,fig_LABEL,Pval);
+        set(gcf,'Position',[100,100,800,450],'paperpositionmode','auto')
+        print(gcf,[folder.results.figs,'IOC\',sprintf('%s_%s_%s',fig_LABEL{:}),'.tif'],'-dtiff')
+    end
 
-    
 end
 %%
-    fig_DESIGN  = cat(1,ismember(setup.IO.label.all,{'Bi l-m M1','Mo pl-am M1'}),ismember(setup.IO.label.all,{'Bi pl-am M1','Mo l-m M1'}));
-    fig_LABEL   = [{['Bi 90°',' & ','Mo 45 °']},{['Bi 45°',' & ','Mo 90°']},{[Label.ioc_Field{i_d}, ' M1']}];
-    utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-    
-    fig_DESIGN  = cat(1,(setup.IO.BI & setup.IO.M1),(setup.IO.BI & ~setup.IO.M1));
-    fig_LABEL   = [{'M1'},{'NPMA'},{['Biphasic ',Label.ioc_Field{i_d}]}];
-    utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
-    
-    fig_DESIGN  = cat(1,(~setup.IO.BI & setup.IO.M1),(~setup.IO.BI & ~setup.IO.M1));
-    fig_LABEL   = [{'M1'},{'NPMA'},{['Monophasic ',Label.ioc_Field{i_d}]}];
-    utils.plot_ioc(TestResults,fig_DESIGN,fig_LABEL)
+
 
      
