@@ -24,6 +24,7 @@ max(grpstats(cat(1,SUB.age),SUBID))
 %% SUB parameters IOC
 load([folder.results.stats,'ioc_data.mat'],'SUB')
 SUBID = cat(2,SUB.SUBID);SUBID = SUBID(1,:);
+CND = cat(1,SUB.CONDITION)
 MSO = cat(2,SUB.STIMINTENSITYinMSO);
 data = MSO(2,:);
 [p,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'})
@@ -33,7 +34,6 @@ data((MSO(end,:) == 100)) = NaN;
 [p,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'})
 [c,m,h,nms]             = multcompare(stats,'dim',[1],'display','on');
 
-CND = cat(1,SUB.CONDITION);
 grpstats(MSO',mod(CND+1,2))
 grpstats(MSO',mod(CND+1,2),'max')
 grpstats(MSO',mod(CND+1,2),'min')
@@ -193,6 +193,9 @@ for i_d = [1,3]
 
 end
 %% TIMECOURSE
+labels_list         = cat(1,setup.IO.label.BI,setup.IO.label.LM,setup.IO.label.M1);
+DESIGN              = logical(cat(1,setup.IO.BI,setup.IO.LM,setup.IO.M1));
+DESIGN_labels       = cat(1,setup.IO.label.BI(~setup.IO.BI+1),setup.IO.label.LM(~setup.IO.LM+1),setup.IO.label.M1(~setup.IO.M1+1));
 loadfile            = [folder.results.stats,'ioc\',Label.ioc_Field{4},'_stats.mat'];   
 load(loadfile,'TestResults');     
 if exist([folder.results.figs,'TC\']),delete([folder.results.figs,'TC\*.*']), else mkdir([folder.results.figs,'TC\']); end
@@ -202,7 +205,7 @@ Pval        = (cat(3,TestResults.PermutationPval));
 
 for design_idx =1:3
     fig_DESIGN  = cat(1,DESIGN(design_idx,:),~DESIGN(design_idx,:));
-    fig_LABEL   = [[unique(DESIGN_labels(design_idx,DESIGN(design_idx,:),:)),unique(DESIGN_labels(design_idx,~DESIGN(design_idx,:),:))],Label.ioc_Field{i_d}];
+    fig_LABEL   = [[unique(DESIGN_labels(design_idx,DESIGN(design_idx,:),:)),unique(DESIGN_labels(design_idx,~DESIGN(design_idx,:),:))],Label.ioc_Field{4}];
     
     close all
   	[h] = utils.plot_timecourse(MargMeans,fig_DESIGN,fig_LABEL,squeeze(Pval(:,design_idx,:)));

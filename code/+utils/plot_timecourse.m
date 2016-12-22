@@ -26,7 +26,7 @@ end
 
 function h = plot_tc(valu,tit)
     
-    CLIM        = [-100:10:100];    
+    CLIM        = [-125:5:125];    
   
     h = plot_whatever(valu,CLIM,tit,14);
     
