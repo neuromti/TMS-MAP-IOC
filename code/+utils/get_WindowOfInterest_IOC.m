@@ -1,5 +1,5 @@
 function WindowOfInterest = get_WindowOfInterest_IOC(unit_type)
-    if nargin <1, 
+    if nargin <1
         unit_type = 'samples';
     end
     
@@ -8,6 +8,6 @@ function WindowOfInterest = get_WindowOfInterest_IOC(unit_type)
     elseif regexpi(unit_type,'ms')
         WindowOfInterest =  ([(5*5),(60*5)])./5;
     else 
-        error('No Valid unit');
+        error('WOI:UnitValidity','No Valid unit');
     end
 end

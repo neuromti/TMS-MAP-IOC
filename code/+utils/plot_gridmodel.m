@@ -1,6 +1,6 @@
 function plot_gridmodel(V,CLIM)
 
-if nargin<2,
+if nargin<2
     CLIM                            = 2; %abs of upper and lower limit
 end
 

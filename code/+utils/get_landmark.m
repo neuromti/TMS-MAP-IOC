@@ -24,7 +24,7 @@ MAYKA.S1          = [-40 -24 50];
 CoordSys_enum       = {'MNI','TAILARACH'};
 if nargin <2, coordsys = 'MNI'; end
 if nargin <1, name = fieldnames(MAYKA); end
-if ~any(ismember(fieldnames(MAYKA),name)), error('Landmark not correctly specified'); end %case sensitive
+if ~any(ismember(fieldnames(MAYKA),name)), error('LANDMRK:Unspecified','Landmark not correctly specified'); end %case sensitive
 
 xyz = [];
 for name_idx = 1 : length(name)
@@ -34,7 +34,7 @@ if strcmpi(CoordSys_enum{1},coordsys) %MNI
 elseif strcmpi(CoordSys_enum{2},coordsys) %TAILARACH
     xyz = cat(1,xyz,getfield(MAYKA,name{name_idx}));
 else
-    error('Coordinate System not correctly specified'); 
+    error('LANDMRK:CoordSysUnspecified','Coordinate System not correctly specified'); 
 end
 
 end

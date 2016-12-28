@@ -12,7 +12,7 @@ clc
 % Preparing data structure
 SUB         = struct('AmplitudeAcrossIntensity',[],'MepAcrossIntensity',[],'LatencyAcrossIntensity',[],'WaveformAcrossIntensity',[],'SUBID',[],'CONDITION',[]);
 % load data from files and concatenate
-for idx_dataset = 1:length(D)
+for idx_dataset = 1 : length(D)
 
     % Load dataset
     filename    = D(idx_dataset).name;
@@ -27,7 +27,7 @@ for idx_dataset = 1:length(D)
     % Get Condition
     T                                           = utils.scan_DataFileName(filename,setup);
     SUB(idx_dataset).SUBID                      = repmat(T.subID,7,1);
-    tmp_DesignMatrix                            = [setup.IO.BI(T.data_cond),setup.IO.LM(T.data_cond),setup.IO.M1(T.data_cond)];    
+    tmp_DesignMatrix                            = [setup.IO.BI(T.data_cond),setup.IO.LM(T.data_cond),setup.IO.M1(T.data_cond)];
     SUB(idx_dataset).DESIGN                     = repmat(tmp_DesignMatrix,7,1);
     SUB(idx_dataset).CONDITION                  = bin2dec(num2str(tmp_DesignMatrix));
     SUB(idx_dataset).STIMINTENSITYinMSO         = sort(unique(ioc.int),'ascend');

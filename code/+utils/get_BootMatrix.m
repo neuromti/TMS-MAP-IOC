@@ -5,7 +5,7 @@ function BOT = get_BootMatrix(DESIGN,NUM_REP)
     BOT         = int32([]);
     dec_design  = bin2dec(num2str(DESIGN))+1;
     u_dsg       = unique(dec_design);
-    for rep=1:NUM_REP, 
+    for rep=1:NUM_REP
         bot_set    = NaN(size(dec_design));
         for i_dsg=1:length(u_dsg)
             dsg_GetPut  = dec_design==u_dsg(i_dsg);

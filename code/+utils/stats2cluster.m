@@ -16,8 +16,8 @@ function [ClusVal,GridIdx,ClusSize] = calc_cluster(H,S)
     GridIdx     = int8(GridIdx);
     ClusVal     = single([]);
     ClusSize    = single([]);
-    if ~isempty(B),
-        for i_clus = 1:N,
+    if ~isempty(B)
+        for i_clus = 1:N
             ClusVal     = [ClusVal,sum(S(GridIdx==i_clus))];
             ClusSize    = [ClusSize,sum(sum(GridIdx==i_clus))];
         end

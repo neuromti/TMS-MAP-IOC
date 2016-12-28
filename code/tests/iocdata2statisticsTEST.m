@@ -1,6 +1,6 @@
 % cd('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\')
 % clc
-% results = runtests('codereview\iocdata2statisticsTEST.m');
+% results = runtests('tests\iocdata2statisticsTEST.m');
 %%
 function tests = iocdata2statisticsTEST
 
@@ -11,7 +11,7 @@ function tests = iocdata2statisticsTEST
     
     % Calculate Results
      addpath('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code');
-    load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\codereview\testconfigs.mat','DESIGN','STIM','SUBID','SIMPLE_DESIGN');
+    load('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\code\tests\testconfigs.mat','DESIGN','STIM','SUBID','SIMPLE_DESIGN');
     DATA = normrnd(0,.5,size(DESIGN,1),1);
     MODULATOR   = (DESIGN(:,1))+(STIM-1)+(SUBID*.1);
     DATA        = DATA+(5*MODULATOR);

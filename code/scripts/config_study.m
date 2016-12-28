@@ -61,7 +61,7 @@ setup.SUB.id    = num(:,1); %corresponding to S% in datasets
 setup.SUB.sex   = logical(num(:,2)); %male 1; female 0;
 setup.SUB.age   = num(:,3); %in years
 
-for idx_put=1:length(setup.SUB.id),
+for idx_put=1:length(setup.SUB.id)
     idx_take                = setup.SUB.id(idx_put);    
     setup.SUB.pos{idx_put}  = COORD(idx_take).positions;
     setup.HS(idx_put,:)     = nanmean(cat(1,[COORD(idx_take).positions{2:end,2}],[COORD(idx_take).positions{2:end,3}],[COORD(idx_take).positions{2:end,4}]),2);

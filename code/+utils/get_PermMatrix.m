@@ -4,7 +4,7 @@
 function PERM = get_PermMatrix(SUBID,NUM_REP)
     PERM        = int32([]);
     u_sub       = unique(SUBID);
-    for rep=1:NUM_REP, 
+    for rep=1:NUM_REP
         perm_set    = NaN(size(SUBID));
         for i_sub=1:length(u_sub)
             sub_GetPut  = find(SUBID==u_sub(i_sub));      

@@ -14,8 +14,8 @@
 
 function [output] = baseline(input,baselinerange,mode)
 
-if isempty(baselinerange), 
-    warning('No Baseline specified'); 
+if isempty(baselinerange)
+    warning('BSL:NoBaseline','No Baseline specified'); 
     output = input;
     return;
 end
@@ -25,19 +25,19 @@ if nargin <3, mode = 1;  end;
 if size(input,2) < max(baselinerange), input = input'; end
 output = zeros(size(input));
 
-if mode ==1,
+if mode ==1
     output = input - repmat(nanmean(input(:,baselinerange),2),1,size(input,2));
-elseif mode==2,
+elseif mode==2
     bl = repmat(nanmean(input(:,baselinerange),2),1,size(input,2));
     output = (input - bl)./bl;
-elseif mode==3,
+elseif mode==3
     bl = repmat(nanmean(input(:,baselinerange),2),1,size(input,2));
     output = (input - bl)./bl;
     output = output./repmat(nanstd(output,1,2),1,size(input,2));
-elseif mode==4,
+elseif mode==4
     bl = repmat(nanmean(input(:,baselinerange),2),1,size(input,2));
     output = input./bl;    
-elseif mode==5,
+elseif mode==5
     output = input - repmat(nanmin(input(:,baselinerange),[],2),1,size(input,2));
 end
 end

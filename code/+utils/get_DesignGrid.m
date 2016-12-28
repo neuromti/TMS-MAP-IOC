@@ -25,7 +25,7 @@ if nargin == 1
     if islogical(selection) && length(selection) == length(xyz)
     xyz = xyz(selection,:);
     else
-        error('Selection Vector not correctly specified');
+        error('getDESIGNGRID:SelectionUnspecified','Selection Vector not correctly specified');
     end
 else
     

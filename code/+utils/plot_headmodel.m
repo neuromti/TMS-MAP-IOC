@@ -1,6 +1,6 @@
 function plot_headmodel(headmodel,V,CLIM)
 
-if nargin<3,
+if nargin<3
     CLIM = 2; %abs of upper and lower limit
     
 end
