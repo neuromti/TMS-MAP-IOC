@@ -31,7 +31,7 @@ for idx_dataset = 1 : length(D)
     SUB(idx_dataset).DESIGN                     = repmat(tmp_DesignMatrix,7,1);
     SUB(idx_dataset).CONDITION                  = bin2dec(num2str(tmp_DesignMatrix));
     SUB(idx_dataset).STIMINTENSITYinMSO         = sort(unique(ioc.int),'ascend');
-    SUB(idx_dataset).STIMINTENSITYinSTEPS       = (1:7)';
+    SUB(idx_dataset).STIMINTENSITYinSTEPS       = [1:7]';
 
 end
 save([folder.results.stats,'ioc_data.mat'],'SUB')
