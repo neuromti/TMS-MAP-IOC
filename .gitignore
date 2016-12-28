@@ -8,7 +8,7 @@ results/*/*
 *.mat
 *.xlsx
 *.pptx
-*.docx
+## *.docx
 
 #############
 ## Windows detritus
