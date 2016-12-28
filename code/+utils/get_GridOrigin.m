@@ -1,6 +1,6 @@
 function grid_origin = get_GridOrigin(mapping,UseDefinedOrigin)
     
-if nargin <2,
+if nargin <2
     UseDefinedOrigin = true;
 end
 

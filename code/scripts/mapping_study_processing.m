@@ -74,7 +74,7 @@ for i_d = 1:length(Label.Dataset(1:3))
     if ~exist(fileparts(savefile),'dir'), mkdir(fileparts(savefile)); end
     log_betreff   = [Label.Field{(ismember({'AMP','MEP','LAT'},Label.Dataset{i_d}(end-2:end)))},' ',Label.Weight{(ismember({'qu','th'},Label.Dataset{i_d}(1:2)))},': Statistics '];
     
-    if exist (savefile,'file'), %check whether already processed before
+    if exist (savefile,'file') %check whether already processed before
         notify_me([log_betreff,'already analyzed'],'');
     else
         disp([log_betreff,'Started']);

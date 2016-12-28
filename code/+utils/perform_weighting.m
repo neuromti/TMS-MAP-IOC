@@ -1,6 +1,6 @@
 function output = perform_weighting(sub,quad_weigths,threshed_weights)
     
-    if isstruct(sub),
+    if isstruct(sub)
         output = struct();
 
         output.quad_AMP      = quad_weigths*sub.amp;

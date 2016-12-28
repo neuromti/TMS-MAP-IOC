@@ -9,7 +9,7 @@ disp(['Alpha Error: ',num2str(ALPHA_ERROR)])
 disp(['Number of Repetitions ',num2str(NUM_REP)])
 
 % Flags for structured code testing 
-if nargin <5,
+if nargin <5
     PERM_flag   = true;
     BOOT_flag   = true;
 end
@@ -23,7 +23,7 @@ end
 % PERFORMING TRUE ANALYSIS
 % -------------------------------------------------------------------------
 
-for i_pos=1:size(DATA,1),     
+for i_pos=1:size(DATA,1)     
     PositionData                    = (DATA(i_pos,:))';
     [Pval,StatVal,MargMeans,Coeffs] = get_StatisticalValues(PositionData,DESIGN_MATRIX);       
     Test(i_pos).Pval                = Pval;        
@@ -37,7 +37,7 @@ Test_Sval   = cat(1,Test.Sval);
 Test_Coeffs = cat(1,Test.Coeffs);
 Test_MargMeans = cat(2,Test.MargMeans);
 
-for k=1:size(Test_Sval,2),    
+for k=1:size(Test_Sval,2)    
     Hgrid                       = utils.vec2mesh((Test_Pval(:,k)<ALPHA_ERROR));
     Sgrid                       = utils.vec2mesh(Test_Sval(:,k));    
     [ClusVal,GridIdx,ClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
@@ -64,10 +64,10 @@ if PERM_flag
 % PERMUTATION ANALYSIS 
 PERM    = utils.get_PermMatrix(SUBID,NUM_REP);
 Perm = struct();
-for i_pos=1:size(DATA,1),        
+for i_pos=1:size(DATA,1)        
    
   %  utils.progressBar(['Permutation GridPoint ',num2str(i_pos),' [.']);    
-    for rep=1:NUM_REP,         
+    for rep=1:NUM_REP        
   %     utils.progressBar(rep);
         PermutationData                     = (DATA(i_pos,PERM(:,rep)))';          
         [Pval,StatVal,MargMeans,Coeffs]     = get_StatisticalValues(PermutationData,DESIGN_MATRIX);          
@@ -87,13 +87,13 @@ TestResults.PermutationPval = cat(1,Perm.ContrastPval);
 end
 
 
-if BOOT_flag,
+if BOOT_flag
 % BOOTSTRAP ANALYSIS 
 BOT     = utils.get_BootMatrix(DESIGN,NUM_REP);
 Boot    = struct();
-for i_pos=1:size(DATA,1),                
+for i_pos=1:size(DATA,1)                
  %   utils.progressBar(['Bootstrap GridPoint ',num2str(i_pos),' [.']);    
-    for rep=1:NUM_REP,         
+    for rep=1:NUM_REP        
  %       utils.progressBar(rep);
         BootData                        = (DATA(i_pos,BOT(:,rep)))';
         BootDesign                      = cat(2,DESIGN,SUBID(BOT(:,rep)));

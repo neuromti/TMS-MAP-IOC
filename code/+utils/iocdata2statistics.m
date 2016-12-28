@@ -10,7 +10,7 @@ disp(['Alpha Error: ',num2str(ALPHA_ERROR)])
 disp(['Number of Repetitions ',num2str(NUM_REP)])
 
 % Flags for structured code testing 
-if nargin <5,
+if nargin <5
     PERM_flag   = true;
     BOOT_flag   = true;
 end
@@ -40,11 +40,11 @@ Test_Coeffs = cat(1,Test.Coeffs);
 Test_MargMeans = cat(2,Test.MargMeans)';
 TestResults              = struct('Pval',Test_Pval,'Sval',Test_Sval,'Coeffs',Test_Coeffs,'MargMeans',Test_MargMeans);
 
-if CLUS_flag,
+if CLUS_flag
 Test_ClusVal    = {};
 Test_ClusSize   = {};
 Test_ClusIdx    = {};
-for k=1:size(Test_Sval,2),    
+for k=1:size(Test_Sval,2)   
     Hgrid                       = Test_Pval(:,k)<ALPHA_ERROR;
     Sgrid                       = Test_Sval(:,k);    
     [TestClusVal,TestGridIdx,TestClusSize]  = utils.stats2cluster(Hgrid,Sgrid);    
@@ -74,7 +74,7 @@ for i_stim=1:NUM_STIM
     PERM            = utils.get_PermMatrix(PermSUBID,NUM_REP);
     
    % utils.progressBar(['Permutation Intensity ',num2str(i_stim),' [.']);    
-    for rep=1:NUM_REP,         
+    for rep=1:NUM_REP       
    %     utils.progressBar(rep);
         PermutationData                     = StimData(PERM(:,rep));          
         [Pval,StatVal,Coeffs]               = get_StatisticalValues(PermutationData,StimDesign);          
@@ -93,18 +93,18 @@ TestResults.PermutationPval = cat(1,Perm.ContrastPval);
 end
 
 
-if BOOT_flag,
+if BOOT_flag
    disp('Starting permutation analysis!')
 % BOOTSTRAP ANALYSIS 
 Boot    = struct();
-for i_stim=1:NUM_STIM,            
+for i_stim=1:NUM_STIM            
     StimData        = DATA(STIM==i_stim,:);
     StimSUBID       = SUBID(STIM==i_stim,:);
     StimDESIGN      = DESIGN(STIM==i_stim,:);
     BOT            	= utils.get_BootMatrix(StimDESIGN,NUM_REP);
     
    % utils.progressBar(['Bootstrap Intensity ',num2str(i_stim),' [.']);    
-    for rep=1:NUM_REP,         
+    for rep=1:NUM_REP         
    %     utils.progressBar(rep);
         BootData                        = StimData(BOT(:,rep));        
         BootDesign                      = cat(2,StimDESIGN,StimSUBID(BOT(:,rep)));       
@@ -155,7 +155,7 @@ for k = 1 : length(ClusterResults)
             AbsPermClusVal      = sort(abs(PermClusVal));                        
             IsSignificantbyChance = true(1,TestClusterNum);
             
-            if isempty(PermClusVal),
+            if isempty(PermClusVal)
                 IsSignificantbyChance   = false(1,TestClusterNum);
                 SigCounts(rep,:)        = IsSignificantbyChance;  
                 continue; 

@@ -1,7 +1,7 @@
 function h = plot_timecourse(MargMeans,fig_DESIGN,fig_LABEL,Pval)
 
     % Assert Parameters are valid
-    if ~islogical(fig_DESIGN), warning('Design Matrix not logical. Forcing Type Change'), fig_DESIGN = logical(fig_DESIGN); end
+    if ~islogical(fig_DESIGN), warning('pltTC:ForceLogical','Design Matrix not logical. Forcing Type Change'), fig_DESIGN = logical(fig_DESIGN); end
     assert(size(fig_DESIGN,1) == 2, 'Design Matrix wrong dimensions');  
     assert(iscell(fig_LABEL),'Label not a Cell Array'); 
     assert(size(fig_LABEL,2) == 3,'Label Cell Array wrong dimensions');
@@ -25,8 +25,8 @@ function h = plot_timecourse(MargMeans,fig_DESIGN,fig_LABEL,Pval)
 end
 
 function h = plot_tc(valu,tit)
-    
-    CLIM        = [-125:5:125];    
+   
+    CLIM        = -125:5:125;    
   
     h = plot_whatever(valu,CLIM,tit,14);
     
@@ -51,8 +51,8 @@ function h = plot_whatever(PlotValu,CLIM,tit,FontSize)
     [~,ch] = contour(PlotValu,repmat(CLIM,1,2),'LevelListMode','manual');
     set(ch,'fill','on')
         
-    set(gca,'XLIM',[0 275],'XTICK',[0:25:275],'XTICKLABEL',5:5:60,'fontsize',FontSize)
-    set(gca,'YLIM',[1 7],'YTICK',[1:7],'YTICKLABEL',90:10:150,'fontsize',FontSize)
+    set(gca,'XLIM',[0 275],'XTICK',0:25:275,'XTICKLABEL',5:5:60,'fontsize',FontSize)
+    set(gca,'YLIM',[1 7],'YTICK',1:7,'YTICKLABEL',90:10:150,'fontsize',FontSize)
     ylabel('Stimulation Intensity in % RMT','fontsize',FontSize)
     xlabel('Latency in ms','fontsize',FontSize)
     title(tit,'fontsize',FontSize)   

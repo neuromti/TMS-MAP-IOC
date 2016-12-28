@@ -4,7 +4,7 @@ function ALPHA_ERROR  = get_ALPHAERROR(NumTest)
     elseif nargin == 1 && isnumeric(NumTest)
         ALPHA_ERROR         = 0.05/NumTest;
     else
-        error('No correctly specified number of tests');
+        error('getALPHA:UnspecifiedTestNumber','No correctly specified number of tests');
     end
     
 end

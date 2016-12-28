@@ -1,6 +1,6 @@
 function BaseLineRange= get_BaselineRange_IOC(unit_type)
     
-    if nargin <1, 
+    if nargin <1 
         unit_type = 'samples';
     end
     
@@ -13,7 +13,7 @@ function BaseLineRange= get_BaselineRange_IOC(unit_type)
     elseif regexpi(unit_type,'ms')
         BaseLineRange       = (BaseLineRange-WindowOfInterest(1))./5; %5kHz Fs!        
     else 
-        error('No Valid unit');
+        error('getBSL:UnitInvalid','No Valid unit');
     end
     
     

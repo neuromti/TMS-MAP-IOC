@@ -6,7 +6,7 @@
 function plot_ioc(MargMeans,CI,sel_DESIGN,Labels,Pval)
 
     % Assert Parameters are valid
-    if ~islogical(sel_DESIGN), warning('Design Matrix not logical. Forcing Type Change'), sel_DESIGN = logical(sel_DESIGN); end
+    if ~islogical(sel_DESIGN), warning('pltIOC:ForceLogic','Design Matrix not logical. Forcing Type Change'), sel_DESIGN = logical(sel_DESIGN); end
     assert(size(sel_DESIGN,1) == 2, 'Design Matrix wrong dimensions');  
     assert(iscell(Labels),'Label not a Cell Array'); 
     assert(size(Labels,2) == 3,'Label Cell Array wrong dimensions');
@@ -32,7 +32,7 @@ function plot_ioc(MargMeans,CI,sel_DESIGN,Labels,Pval)
     title([[Labels{1},' vs. ',Labels{2}],' -> ',Labels{3}])
     legend([h_a1,h_a2],Labels(1:2),'location','northwest')    
     
-    if any(regexpi(Labels{3},'Amplitude')),
+    if any(regexpi(Labels{3},'Amplitude'))
         set(gca,'YLIM',[0 700],'YTICK',0:100:700,'YTICKLABEL',0:100:700)
         ylabel('Amplitude in µVpp')
     elseif any(regexpi(Labels{3},'MEP'))
@@ -42,10 +42,10 @@ function plot_ioc(MargMeans,CI,sel_DESIGN,Labels,Pval)
         ylabel('Latency in ms')
         set(gca,'YLIM',[24.5 28.5],'YTICK',25:1:28,'YTICKLABEL',25:1:28)         
     else
-        warning('No recognized unit of measure')            
+        warning('pltIOC:UnitUnrecognized','No recognized unit of measure')            
     end
     
-    set(gca,'XLIM',[0.5 7.5],'XTICK',[1:7],'XTICKLABEL',90:10:150,'fontsize',14)
+    set(gca,'XLIM',[0.5 7.5],'XTICK',1:7,'XTICKLABEL',90:10:150,'fontsize',14)
     xlabel('Stimulation Intensity in % RMT')
     plot_sigstars(Pval,PosVal);
     
@@ -76,10 +76,10 @@ function plot_sigstars(Pval,PosVal)
                 plot(PlotIdx,PosVal(PlotIdx,1),'k*','markerfacecolor','k','markersize',10);
                 
             else
-                warning('Wrong Dimensions')
+                warning('pltIOC:WrongDim','Wrong Dimensions')
             end
         else
-            warning('Wrong Dimensions')
+            warning('pltIOC:WrongDim','Wrong Dimensions')
         end       
     end        
 end
