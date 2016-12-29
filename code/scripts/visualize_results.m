@@ -21,25 +21,29 @@ mean(grpstats(cat(1,SUB.age),SUBID))
 std(grpstats(cat(1,SUB.age),SUBID))
 min(grpstats(cat(1,SUB.age),SUBID))
 max(grpstats(cat(1,SUB.age),SUBID))
+%% M1 Estimation
+a               = (grpstats(cat(1,SUB.GridOrigin),SUBID))+[0,-10,0]; %grid origin is 10mm anterior to HotSpot
+[h,p,ci,stats]  = ttest(a-utils.get_M1())
 %% SUB parameters IOC
 load([folder.results.stats,'ioc_data.mat'],'SUB')
-SUBID = cat(2,SUB.SUBID);SUBID = SUBID(1,:);
+SUBID = cat(2,SUB.SUBID);SUBID = SUBID(1,:)';
+DESIGN = cat(3,SUB.DESIGN); DESIGN = squeeze(DESIGN(1,:,:))';
 CND = cat(1,SUB.CONDITION);
 MSO = cat(2,SUB.STIMINTENSITYinMSO);
 data = MSO(2,:);
-[~,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'});
-[c,m,h,nms]             = multcompare(stats,'dim',[1],'display','on');
 
-data((MSO(end,:) == 100)) = NaN;
-[p,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'})
+[p,tab,stats] = anovan(data,cat(2,DESIGN,SUBID),'random',4,'display','off','varnames',{'BI','LM','M1','Subject'})
+[c,m,h,nms]   = multcompare(stats,'dim',[1],'display','off')
+
+
+%%
+[~,tab,stats] = anovan(data,cat(2,~mod(CND+1,2),SUBID'),'random',2,'display','off','varnames',{'M1','Subject'});
 [c,m,h,nms]             = multcompare(stats,'dim',[1],'display','on');
 
 grpstats(MSO',mod(CND+1,2))
 grpstats(MSO',mod(CND+1,2),'max')
 grpstats(MSO',mod(CND+1,2),'min')
-%% M1 Estimation
-a               = (grpstats(cat(1,SUB.GridOrigin),SUBID))+[0,-10,0]; %grid origin is 10mm anterior to HotSpot
-[h,p,ci,stats]  = ttest(a-utils.get_M1())
+
 %% Get Mean and SD of RMT used for Mapping
 [num,str,all]   = xlsread('C:\PROJECTS\Subject Studies\TMS-MAP-IOC\zwischen\subject_data.xlsx',2);
 % remember: mapping was performed at 110% of RMT
