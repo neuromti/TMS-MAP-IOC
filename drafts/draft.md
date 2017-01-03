@@ -20,16 +20,18 @@ within each subject.
 
 *Transcranial Magnetic Stimulation*
 
-In each session, TMS was applied with a MagPro X100 with MagOption and a
-MCF-B70 figure-of-eight coil of 97mm diameter (Magventure, Denmark).
-Stimulation was performed based on a template headmodel using the
-([]{#OLE_LINK1 .anchor}TMS Navigator, Localite, Germany). We recorded
-MEPs at the extensor digitorum of the right hand with surface
-electromyography. The muscle was located by palpation during extension
-of the wrist and anatomical landmarks. The skin was cleaned using 95%
-ethanol and abrasive gel. We used self-adhesive electrodes (Neuroline,
-Ambu, Germany). During the whole experiment, the subject was seated in a
-comfortable reclining chair and was told to relax his or her muscles.
+In each session, TMS was applied with a MagPro X100 with MagOption using
+Power Mode and a MCF-B70 figure-of-eight coil of 97mm diameter
+(Magventure, Denmark). Consider that Power Mode increases the maximum
+stimulator output by 40%. Stimulation was performed based on a template
+headmodel using the ([]{#OLE_LINK1 .anchor}TMS Navigator, Localite,
+Germany). We recorded MEPs at the extensor digitorum of the right hand
+with surface electromyography. The muscle was located by palpation
+during extension of the wrist and anatomical landmarks. The skin was
+cleaned using 95% ethanol and abrasive gel. We used self-adhesive
+electrodes (Neuroline, Ambu, Germany). During the whole experiment, the
+subject was seated in a comfortable reclining chair and was told to
+relax his or her muscles.
 
 *Hotspot Detection*
 
@@ -47,10 +49,10 @@ a given stimulation intensity.
 
 *Resting Motor Threshold*
 
-At this spot the resting motor threshold (RMT) was determined with the
-relative frequency method \[3\], i.e. RMT was defined as the stimulator
-intensity at which 5 out of 10 stimuli would elicit an MEP with an
-amplitude larger than 50 µVpp.
+At this spot the resting motor threshold (RMT) was determined
+[]{#OLE_LINK3 .anchor}with the relative frequency method \[3\], i.e. RMT
+was defined as the stimulator intensity at which 5 out of 10 stimuli
+would elicit an MEP with an amplitude larger than 50 µVpp.
 
 *Mapping Grid*
 
@@ -60,17 +62,31 @@ anterior of the previously detected hotspot. In steps of 0.5 cm, we set
 anterior and 2.5 cm posterior to the hotspot. At each of the 105 grid
 points, 3 stimuli were applied. This resulted in an average of 15
 Stimuli/cm^2^. The mapping was carried out for each stimulation
-condition with 110% of RMT.
+condition with 110% of the RMT of the primary target. We had to remove 6
+measurements for technical reasons, resulting in 46 total and 11 to 13
+maps for each of the four conditions.
 
 *Input-Output-Curves*
 
 After mapping, we selected the point in the grid with the highest MEP
-averaged over 3 stimuli (M1 spot) and identified the most anterior point
-eliciting any MEP (NPMA spot). To assess differences in the respective
-neuronal structures, we measured the stimulus-response-curve at each
-spot. We stimulated with 7 intensities ranging from 90% - 150% of the
-respective RMT in steps of 10%. We delivered 10 stimuli per intensity.
-The order of stimulation intensities was randomized within each subject.
+averaged over 3 stimuli (primary target) and identified the most
+anterior point eliciting any MEP (anterior target). To assess
+differences in the respective neuronal structures, we measured the
+stimulus-response-curve at each target. We stimulated with 7 intensities
+ranging from 90% - 150% of the respective RMT in steps of 10%,
+delivering 10 stimuli per intensity. The order of stimulation
+intensities was randomized within each subject. Consider that 150% of
+67% MSO is 100%, suggesting that at RMT higher than 67%, we would not be
+able to sample for high intensities. To be able to adequately sample the
+complete input-output curve, we therefore used the following procedure.
+If the RMT at the primary target was above 67% MSO, we calculated the
+stimulation intensities for primary and anterior target relative to 67%
+MSO. If RMT at the primary target was below 67%, we determined the RMT
+for the anterior target with the relative frequency method \[3\], and
+used distinct stimulation intensities for primary and anterior target.
+We had to remove 15 measurements for technical reasons, resulting in 89
+total and 10 to 13 input-output curve measurements for each of the eight
+conditions.
 
 *Signal Processing*
 
@@ -91,17 +107,22 @@ categorical factors coil <span
 style="font-variant:small-caps;">Orientation</span> (90° vs. 45°) and
 stimulus <span style="font-variant:small-caps;">Waveform</span>
 (biphasic vs. monophasic) as well as <span
-style="font-variant:small-caps;">Target</span> (M1 vs. NPMA spot) on
-latency and amplitude, accounting for interactions between the three
-factors and <span style="font-variant:small-caps;">Subject</span> as a
-random factor. This test was performed for each stimulus-intensity. For
-the time-course, we performed this analysis additionally for every
-time-point. Regarding the mapping, we calculated the influence of the
-categorical factors coil <span
-style="font-variant:small-caps;">Orientation</span> and stimulus <span
-style="font-variant:small-caps;">Waveform</span> on resting motor
-threshold, latency and amplitude, accounting for interactions between
-the two factors and <span
+style="font-variant:small-caps;">Target</span> (M1 vs. NPMA) on latency
+and amplitude, accounting for interactions between the three factors and
+<span style="font-variant:small-caps;">Subject</span> as a random
+factor. This test was performed for each stimulus-intensity. For the
+time-course, we performed this analysis additionally for every
+time-point. We also calculated the influence of <span
+style="font-variant:small-caps;">Target</span> on measured RMT between
+anterior and primary target using an analysis of variance, accounting
+for <span style="font-variant:small-caps;">Subject</span> as a random
+factor.
+
+Regarding the mapping, we calculated the influence of the categorical
+factors coil <span style="font-variant:small-caps;">Orientation</span>
+and stimulus <span style="font-variant:small-caps;">Waveform</span> on
+resting motor threshold, latency and amplitude, accounting for
+interactions between the two factors and <span
 style="font-variant:small-caps;">Subject</span> as a random factor. This
 test was performed for each grid-point. The statistical significance of
 the influence of the factors on latency and amplitude was additionally
@@ -117,26 +138,20 @@ significance threshold was set to 5% for all statistical tests.
 
 The average position of the hotspot across subjects used for the
 definition of the two-dimensional mapping grid origin was centered on X
-= -36.9, Y = -18.6. This is not different from the position of M1 as
-established in literature \[4\] as evidenced by finding no significant
-differences (t(12) = \[0.2, 0.39\], p = \[0.85, 0.70\]). This suggests
-that, as designed, the average grid origin was 1 cm anterior to M1.
-
-*Resting Motor Threshold*
-
-Inspection of the average motor threshold in %MSO for biphasic
-stimulation at 90° (M = 38.3, SD = 7.7) and 45° (M = 36.7, SD = 10.7),
-as well as for monophasic at 90° (M = 65.9, SD = 12.1) and 45° (M =
-61.7, SD = 13.0) exhibits the decreased resting motor threshold for
-biphasic stimulation. Indeed, resting motor threshold was not
-significantly different for orientation (F(1, 28) = 1.9, p=0.18) , but
-only for waveform (F(1, 28) = 116.4, p&gt;0.001). Additionally, we found
-no significant interactions (F(1, 28) = 0.1, p=0.73).
+= -36.9, Y = -18.6. We found no significant differences (t(12) = \[0.19,
+0.39\], p = \[0.85, 0.70\]) to the position from M1 as established in
+literature \[4\]. This suggests that, as designed, the average grid
+origin was 1 cm anterior to M1.
 
 *Mapping Grid*
 
-We found grid points exhibiting a significant influence of <span
-style="font-variant:small-caps;">waveform</span> and <span
+The average stimulation intensity used for mapping was significantly
+different for <span style="font-variant:small-caps;">waveform</span>
+(F(1, 28) = 116.4, p&gt;0.001) but not for <span
+style="font-variant:small-caps;">orientation</span> (F(1, 28) = 1.9,
+p=0.18). Additionally, we found no significant interactions (F(1, 28) =
+0.1, p=0.73). We found grid points exhibiting a significant influence of
+<span style="font-variant:small-caps;">waveform</span> and <span
 style="font-variant:small-caps;">orientation</span> on MEP parameters
 (figure 1). Cluster-based permutation test revealed a significant
 difference for biphasic instead of monophasic stimulation increases
@@ -181,9 +196,10 @@ style="font-variant:small-caps;">Target</span> at a local 5% alpha error
 level, but after applying Bonferonni-correction, effects were limited to
 <span style="font-variant:small-caps;">waveform</span>. Biphasic
 stimulation exhibited increased amplitude (see figure 3B) and decreased
-latency (see figure 3E) at moderate stimulation intensities (around 120 - 130 % RMT).
+latency (see figure 3E) at moderate stimulation intensities (around 120
+- 130 % RMT).
 
-![figure1.tif](media/image1.png){width="6.299212598425197in"
+![figure1.tif](media/image1.tiff){width="6.299212598425197in"
 height="5.225859580052494in"}**Figure 1:** *It shows the topography of
 significance for the two factors <span
 style="font-variant:small-caps;">Orientation</span> and <span
@@ -208,7 +224,7 @@ style="font-variant:small-caps;">Orientation</span> on amplitude,
 suggesting decreased amplitude for stimulation with 90° in contrast to
 45°.*
 
-![figure2.tif](media/image2.png){width="6.299807524059492in"
+![figure2.tif](media/image2.tiff){width="6.299807524059492in"
 height="3.567361111111111in"}
 
 **Figure 2:** *It shows the spatial distribution of the anterior
@@ -221,8 +237,8 @@ scatter-cloud and the mean presented as a bar.*
 *\
 *
 
-![image3.tif](media/image3.png){width="6.3in"
-height="5.328503937007874in"}
+![image3.tif](media/image3.tiff){width="6.299212598425197in"
+height="5.640583989501312in"}
 
 **Figure 3:** *It shows the influence of the factors <span
 style="font-variant:small-caps;">Orientation</span>, <span
